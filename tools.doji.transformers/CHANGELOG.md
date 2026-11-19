@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
-- Changed the dependency version of com.doji.sentencepiece from 0.0.0 to 0.1.0
+- Changed the dependency version of tools.doji.sentencepiece from 0.0.0 to 0.1.0
 
 ## [0.1.2] - 2025-04-01
 

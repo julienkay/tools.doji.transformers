@@ -1,20 +1,20 @@
 {
-  "name": "com.doji.transformers",
+  "name": "tools.doji.transformers",
   "version": "0.1.6",
   "displayName": "Transformers",
   "description": "State-of-the-art transformer models to perform tasks on different modalities such as text, vision, and audio with Unity Sentis",
   "dependencies": {
     "com.unity.ai.inference": "2.5.0",
     "com.unity.nuget.newtonsoft-json": "3.2.1",
-    "com.doji.sentencepiece": "0.1.1",
-    "com.doji.sentis-utils": "0.1.1"
+    "tools.doji.sentencepiece": "0.1.1",
+    "tools.doji.sentis-utils": "0.1.1"
   },
   "author": {
     "name": "Doji Technologies",
     "url": "https://www.doji-tech.com/",
     "email": "support@doji-tech.com"
   },
-  "documentationUrl": "https://docs.doji-tech.com/com.doji.transformers/",
+  "documentationUrl": "https://docs.doji-tech.com/tools.doji.transformers/",
   "samples": [
     {
       "displayName": "Phi-3 Mini Sample",

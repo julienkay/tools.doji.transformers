@@ -12,7 +12,7 @@ A Unity package to run pretrained transformer models with Unity Sentis
 This is essentially a C# port of Hugging Face’s [transformers] library.
 
 There are two use cases for this package right now:
-- It's used by the [com.doji.diffusers] package to run Stable Diffusion models in Unity (most SD models use a ClipTokenizer for prompting, newer pipelines require additional ones like T5Tokenizer)
+- It's used by the [tools.doji.diffusers] package to run Stable Diffusion models in Unity (most SD models use a ClipTokenizer for prompting, newer pipelines require additional ones like T5Tokenizer)
 - To run small LLMs like [Phi-3](https://huggingface.co/julienkay/Phi-3-mini-4k-instruct_no_cache_uint8) in Unity (WIP)
 
 ### Installation
@@ -26,7 +26,7 @@ There are two use cases for this package right now:
         URL: https://package.openupm.com
         Scope(s): com.doji
  
-  4. In the Package Manager install `com.doji.transformers` either by name or select it in the list under `Package Manager -> My Registries`
+  4. In the Package Manager install `tools.doji.transformers` either by name or select it in the list under `Package Manager -> My Registries`
 
 </details>
 
@@ -52,8 +52,8 @@ var outputs = model.Generate(inputs);
 var predictedText = tokenizer.Decode(outputs);
 ```
 
-[OpenUPM]: https://openupm.com/packages/com.doji.transformers
-[Documentation (coming soon)]: https://github.com/julienkay/com.doji.transformers
+[OpenUPM]: https://openupm.com/packages/tools.doji.transformers
+[Documentation (coming soon)]: https://github.com/julienkay/tools.doji.transformers
 [Feedback/Questions]: https://discussions.unity.com/t/stable-diffusion-diffusers-transformers-package/332701?u=julienkay
 [transformers]: https://github.com/huggingface/transformers
-[com.doji.diffusers]: https://github.com/julienkay/com.doji.diffusers
+[tools.doji.diffusers]: https://github.com/julienkay/tools.doji.diffusers
