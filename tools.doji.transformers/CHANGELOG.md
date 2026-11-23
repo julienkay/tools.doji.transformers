@@ -12,9 +12,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Text generation with decoder-only language models exported to plain ONNX (the input and output names of optimum): `AutoModelForCausalLM`, `LlamaForCausalLM` (for example SmolLM2) and `Phi3ForCausalLM`.
 - `PreTrainedModel.GenerateAsync` and `Generate`, like transformers' `generate` with greedy decoding or sampling: a KV cache on the GPU (`DynamicCache`), the logits processors for repetition penalty, minimum new tokens, temperature, top-k, top-p and min-p, and stopping at the maximum length, the maximum time or an end-of-sequence token.
 - `TextStreamer`, which passes on the text as it is generated.
-- `PreTrainedTokenizerFast`, which reads byte-level BPE `tokenizer.json` files (SmolLM2, Qwen2.5, GPT-2 and others).
+- `TokenizersBackend`, the tokenizer of transformers v5: it runs the `Tokenizer` of `tools.doji.tokenizers`, a C# port of the Hugging Face tokenizers library, and loads any `tokenizer.json` (BPE, Unigram, WordPiece and WordLevel models).
+- `Qwen2Tokenizer`, and truncation, padding, pairs and batches as transformers v5 does them.
 - `ApplyChatTemplate` for ChatML and Phi-3 chat templates.
-- `AutoTokenizer.FromPretrainedAsync`.
+- `AutoTokenizer.FromPretrainedAsync`, which picks the tokenizer class from the model type and the tokenizer config as transformers v5 does.
 - A text generation sample with SmolLM2-135M-Instruct, which replaces the Phi-3 sample.
 - Tests that compare a tiny random Llama model with onnxruntime and transformers, and the tokenizers with the official ones on many edge cases.
 
@@ -22,12 +23,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Models and tokenizers are delivered by AI Model Hub (`tools.doji.model-hub`). List the models in the project's AI Model Hub manifest.
 - Depends on `com.unity.ai.inference` 2.6.1 and Unity 6000.3.
-- `GPT2Tokenizer` no longer adds CLIP's end-of-word suffix and reads all merges.
-- `LlamaTokenizer` uses the C# sentencepiece port of `tools.doji.tokenizers` instead of `tools.doji.sentencepiece` and its DLLs. It now gives the same ids as sentencepiece for runs of one character, and also takes the model as bytes.
+- All tokenizers work as in transformers v5: `GPT2Tokenizer`, `CLIPTokenizer` (renamed from `ClipTokenizer`), `LlamaTokenizer` and `Qwen2Tokenizer` build their pipeline on `TokenizersBackend` from `tokenizer.json`, `vocab.json` and `merges.txt`, or `tokenizer.model`. As in v5, `CLIPTokenizer` no longer runs ftfy and `LlamaTokenizer` is not legacy by default.
+- The special tokens of `PreTrainedTokenizerBase` are strings, and `TokenizerConfig` reads them as the `AddedToken` of `tools.doji.tokenizers`.
+- Depends on `tools.doji.tokenizers` instead of `tools.doji.sentencepiece` and its DLLs.
 
 ### Removed
 
 - Loading models from `Resources` and `StreamingAssets`.
+- The slow tokenizers (`PreTrainedTokenizer`, `BasicTokenizer`, `Trie`, ftfy's `FixText`) and `PreTrainedTokenizerFast`, as transformers v5 removed them.
 - The unfinished beam search, the cache classes other than `DynamicCache`, `Kwargs` and `ModelOutput`.
 
 ## [0.1.6] - 2026-02-17

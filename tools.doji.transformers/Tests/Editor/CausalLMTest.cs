@@ -37,7 +37,7 @@ namespace Doji.AI.Transformers.Editor.Tests {
         [Test]
         public void AutoClasses_PickLlama() {
             Assert.That(_model, Is.TypeOf<LlamaForCausalLM>());
-            Assert.That(_tokenizer, Is.TypeOf<PreTrainedTokenizerFast>());
+            Assert.That(_tokenizer, Is.TypeOf<GPT2Tokenizer>());
             Assert.That(_model.GenerationConfig.EosTokenId, Is.EqualTo(new[] { 2 }));
         }
 

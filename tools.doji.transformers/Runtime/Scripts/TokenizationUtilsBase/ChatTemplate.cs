@@ -58,12 +58,12 @@ namespace Doji.AI.Transformers {
                 }
             } else if (template != null && template.Contains("<|end|>")) {
                 if (template.Contains("bos_token")) {
-                    text.Append(BosToken?.Content);
+                    text.Append(BosToken);
                 }
                 foreach (ChatMessage message in list) {
                     text.Append($"<|{message.Role}|>\n{message.Content}<|end|>\n");
                 }
-                text.Append(addGenerationPrompt ? "<|assistant|>\n" : EosToken?.Content);
+                text.Append(addGenerationPrompt ? "<|assistant|>\n" : EosToken);
             } else {
                 throw new NotSupportedException("This chat template is not supported. Supported: ChatML and Phi-3.");
             }

@@ -10,25 +10,42 @@ AI Model Hub only takes repositories with a model file, so the tokenizer files r
 Usage:
   python make_tokenizer_references.py copy <tiny model folder>
   python make_tokenizer_references.py
+
+Needs transformers 5.x (pip install "transformers>=5" sentencepiece protobuf).
 """
 import sys
 import json
 import os
 
+import transformers
 from transformers import AutoTokenizer
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RESOURCES = os.path.normpath(os.path.join(HERE, "..", "..", "tools.doji.transformers", "Tests", "Editor", "Resources", "tokenizers"))
 
-# name: repo, revision, use_fast (False compares with the slow tokenizer the Unity class ports).
+# name: repo, revision. Made with transformers 5.x, whose tokenizers all run on the tokenizers library.
 TOKENIZERS = {
-    "smollm2": ("julienkay/tiny-random-LlamaForCausalLM-onnx", "1675db936b735d669df5a25bb238179b110486e2", True),
-    "gpt2": ("openai-community/gpt2", "607a30d783dfa663caf39e06633721c8d4cfcd7e", True),
-    "gpt2_slow": ("openai-community/gpt2", "607a30d783dfa663caf39e06633721c8d4cfcd7e", False),
-    "qwen2_5": ("Qwen/Qwen2.5-0.5B-Instruct", "7ae557604adf67be50417f59c2c2f167def9a775", True),
-    "phi3": ("microsoft/Phi-3-mini-4k-instruct", "f39ac1d28e925b323eae81227eaba4464caced4e", False),
-    "clip": ("openai/clip-vit-base-patch32", "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268", False),
+    "smollm2": ("julienkay/tiny-random-LlamaForCausalLM-onnx", "1675db936b735d669df5a25bb238179b110486e2"),
+    "gpt2": ("openai-community/gpt2", "607a30d783dfa663caf39e06633721c8d4cfcd7e"),
+    "qwen2_5": ("Qwen/Qwen2.5-0.5B-Instruct", "7ae557604adf67be50417f59c2c2f167def9a775"),
+    "phi3": ("microsoft/Phi-3-mini-4k-instruct", "f39ac1d28e925b323eae81227eaba4464caced4e"),
+    "clip": ("openai/clip-vit-base-patch32", "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268"),
 }
+
+# Calls with pairs, batches, truncation and padding: the keyword arguments of tokenizer(...).
+CALLS = [
+    {"text": "Hello world!", "text_pair": "How are you?"},
+    {"text": "Hello world!", "max_length": 6, "truncation": True},
+    {"text": "Hello world!", "text_pair": "How are you doing today, my friend?", "max_length": 9, "truncation": True},
+    {"text": "Hello world! How are you?", "text_pair": "Fine.", "max_length": 7, "truncation": "only_first"},
+    {"text": "a photo of a cat", "padding": "max_length", "max_length": 12},
+    {"text": "a photo of a cat", "padding": "max_length", "max_length": 4, "truncation": True},
+    {"text": ["a photo of a cat", "a dog", ""], "padding": True},
+    {"text": ["a photo of a cat", "a dog"], "padding": True, "pad_to_multiple_of": 8},
+    {"text": ["first text", "second"], "text_pair": ["pair one", "pair two is longer"], "padding": "longest"},
+    {"text": "Hello world!", "add_special_tokens": False, "return_special_tokens_mask": True},
+    {"text": "Hello world!", "return_special_tokens_mask": True, "return_token_type_ids": True},
+]
 
 TEXTS = [
     # whitespace
@@ -65,7 +82,6 @@ SPECIAL_TEXTS = {
     "phi3": ["<|user|>\nhi<|end|>\n<|assistant|>\n", "<|endoftext|>", "a<|end|>b", " <|end|> ", "<s>hi</s>"],
     "clip": ["<|startoftext|>a photo<|endoftext|>"],
 }
-SPECIAL_TEXTS["gpt2_slow"] = SPECIAL_TEXTS["gpt2"]
 
 CHATS = [
     [{"role": "user", "content": "What is the capital of France?"}],
@@ -75,10 +91,39 @@ CHATS = [
 ]
 
 
-def references(name, repo, revision, use_fast):
-    tokenizer = AutoTokenizer.from_pretrained(repo, revision=revision, use_fast=use_fast)
+def call(tokenizer, kwargs):
+    try:
+        encoding = tokenizer(**kwargs)
+    except Exception as e:  # for example padding without a pad token
+        return {"kwargs": kwargs, "error": type(e).__name__}
+    return {"kwargs": kwargs, "output": {k: v for k, v in encoding.items()}}
+
+
+# name: repo, revision of tokenizers loaded by LlamaTokenizer from tokenizer.model alone, without tokenizer.json.
+SENTENCEPIECE = {
+    "phi3_spm": ("microsoft/Phi-3-mini-4k-instruct", "f39ac1d28e925b323eae81227eaba4464caced4e"),
+}
+
+
+def load(name, repo, revision):
+    if name not in SENTENCEPIECE:
+        return AutoTokenizer.from_pretrained(repo, revision=revision)
+    import tempfile
+    import shutil
+    from huggingface_hub import hf_hub_download
+    from transformers import LlamaTokenizer
+    folder = tempfile.mkdtemp()
+    for file in ["tokenizer.model", "tokenizer_config.json"]:
+        shutil.copy(hf_hub_download(repo, file, revision=revision), os.path.join(folder, file))
+    return LlamaTokenizer.from_pretrained(folder)
+
+
+def references(name, repo, revision):
+    from transformers import AutoConfig
+    tokenizer = load(name, repo, revision)
+    model_type = AutoConfig.from_pretrained(repo, revision=revision).model_type
     cases = []
-    for text in TEXTS + SPECIAL_TEXTS.get(name, []):
+    for text in TEXTS + SPECIAL_TEXTS.get(name.removesuffix("_spm"), []):
         ids = tokenizer.encode(text)
         cases.append({
             "text": text,
@@ -94,9 +139,10 @@ def references(name, repo, revision, use_fast):
             for prompt in (True, False):
                 chats.append({"messages": messages, "add_generation_prompt": prompt,
                               "text": tokenizer.apply_chat_template(messages, add_generation_prompt=prompt, tokenize=False)})
-    subfolder = f"tokenizers/{name.removesuffix('_slow')}/" if name.removesuffix("_slow") in FILES else ""
+    subfolder = f"tokenizers/{name.removesuffix('_spm')}/" if name.removesuffix("_spm") in FILES else ""
     return {"source": repo, "revision": revision, "repo": TEST_REPO, "subfolder": subfolder,
-            "class": type(tokenizer).__name__, "cases": cases, "chats": chats}
+            "transformers": transformers.__version__, "model_type": model_type, "class": type(tokenizer).__name__,
+            "cases": cases, "calls": [call(tokenizer, kwargs) for kwargs in CALLS], "chats": chats}
 
 
 TEST_REPO = "julienkay/tiny-random-LlamaForCausalLM-onnx"
@@ -112,7 +158,7 @@ def copy(out):
     import shutil
     from huggingface_hub import hf_hub_download
     for name, files in FILES.items():
-        repo, revision, _ = TOKENIZERS[name]
+        repo, revision = TOKENIZERS[name]
         folder = os.path.join(out, "tokenizers", name)
         os.makedirs(folder, exist_ok=True)
         for file in files:
@@ -124,8 +170,8 @@ def main():
         copy(sys.argv[2])
         return
     os.makedirs(RESOURCES, exist_ok=True)
-    for name, (repo, revision, use_fast) in TOKENIZERS.items():
-        data = references(name, repo, revision, use_fast)
+    for name, (repo, revision) in {**TOKENIZERS, **SENTENCEPIECE}.items():
+        data = references(name, repo, revision)
         with open(os.path.join(RESOURCES, name + ".json"), "w", encoding="utf-8", newline="\n") as f:
             json.dump(data, f, ensure_ascii=False, indent=1)
         print(name, data["class"], len(data["cases"]), "cases", len(data["chats"]), "chats")

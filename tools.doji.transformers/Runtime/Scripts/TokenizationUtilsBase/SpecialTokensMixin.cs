@@ -1,207 +1,64 @@
-using System;
+using Doji.AI.Tokenizers;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Doji.AI.Transformers {
 
-    public abstract partial class PreTrainedTokenizerBase : ISpecialTokensMixin {
+    public abstract partial class PreTrainedTokenizerBase {
 
-        public Token BosToken { get; set; }
-        public Token EosToken { get; set; }
-        public Token UnkToken { get; set; }
-        public Token SepToken { get; set; }
-        public Token PadToken { get; set; }
-        public Token ClsToken { get; set; }
-        public Token MaskToken { get; set; }
-        public List<Token> AdditionalSpecialTokens { get; set; }
+        /// <summary>The named special tokens, as the tokenizer config sets them.</summary>
+        protected Dictionary<string, AddedToken> SpecialTokensMap { get; } = new();
 
-        public int? BosTokenId {
-            get {
-                if (BosToken == null) return null;
-                return ConvertTokensToIds(BosToken);
-            }
-            set {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int? EosTokenId {
-            get {
-                if (EosToken == null)
-                    return null;
-                return ConvertTokensToIds(EosToken);
-            }
-            set {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int? UnkTokenId {
-            get {
-                if (UnkToken == null)
-                    return null;
-                return ConvertTokensToIds(UnkToken);
-            }
-            set {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int? SepTokenId {
-            get {
-                if (SepToken == null)
-                    return null;
-                return ConvertTokensToIds(SepToken);
-            }
-            set {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int? PadTokenId {
-            get {
-                if (PadToken == null)
-                    return null;
-                return ConvertTokensToIds(PadToken);
-            }
-            set {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int PadTokenTypeID { get; private set; }
-
-        public int? ClsTokenId {
-            get {
-                if (ClsToken == null)
-                    return null;
-                return ConvertTokensToIds(ClsToken);
-            }
-            set {
-                throw new NotImplementedException();
-            }
-        }
-
-        public int? MaskTokenId {
-            get {
-                if (MaskToken == null)
-                    return null;
-                return ConvertTokensToIds(MaskToken);
-            }
-            set {
-                throw new NotImplementedException();
-            }
-        }
-
-        public List<int> AdditionalSpecialTokensIds { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        /// <summary>The special tokens beyond the named ones (transformers' <c>extra_special_tokens</c>).</summary>
+        public List<AddedToken> ExtraSpecialTokens { get; } = new();
 
         /// <summary>
-        /// A list of the unique special tokens (`'<unk>'`, `'<cls>'`, ..., etc.).
-        /// Convert tokens of `tokenizers.AddedToken` type to string.
+        /// Reads the special tokens of the config, with the defaults of the tokenizer class for the ones the config does
+        /// not set.
         /// </summary>
+        protected void SetSpecialTokens(string unk = null, string bos = null, string eos = null, string pad = null) {
+            static AddedToken Default(string token) => token != null ? new AddedToken(token, special: true) : null;
+            SpecialTokensMap["bos_token"] = Config.BosToken ?? Default(bos);
+            SpecialTokensMap["eos_token"] = Config.EosToken ?? Default(eos);
+            SpecialTokensMap["unk_token"] = Config.UnkToken ?? Default(unk);
+            SpecialTokensMap["sep_token"] = Config.SepToken;
+            SpecialTokensMap["pad_token"] = Config.PadToken ?? Default(pad);
+            SpecialTokensMap["cls_token"] = Config.ClsToken;
+            SpecialTokensMap["mask_token"] = Config.MaskToken;
+            ExtraSpecialTokens.Clear();
+            ExtraSpecialTokens.AddRange(Config.ExtraSpecialTokens);
+        }
+
+        private string Special(string name) => SpecialTokensMap.TryGetValue(name, out AddedToken token) ? token?.Content : null;
+        private int? SpecialId(string name) => Special(name) is string token ? ConvertTokensToIds(token) : null;
+
+        public string BosToken => Special("bos_token");
+        public string EosToken => Special("eos_token");
+        public string UnkToken => Special("unk_token");
+        public string SepToken => Special("sep_token");
+        public string PadToken => Special("pad_token");
+        public string ClsToken => Special("cls_token");
+        public string MaskToken => Special("mask_token");
+
+        public int? BosTokenId => SpecialId("bos_token");
+        public int? EosTokenId => SpecialId("eos_token");
+        public int? UnkTokenId => SpecialId("unk_token");
+        public int? SepTokenId => SpecialId("sep_token");
+        public int? PadTokenId => SpecialId("pad_token");
+        public int? ClsTokenId => SpecialId("cls_token");
+        public int? MaskTokenId => SpecialId("mask_token");
+
+        /// <summary>The type id of padding tokens.</summary>
+        public int PadTokenTypeId { get; set; }
+
+        /// <summary>The named and the extra special tokens, without duplicates.</summary>
         public List<string> AllSpecialTokens {
             get {
-                List<string> allToks = new List<string>();
-                foreach (var s in AllSpecialTokensExtended) {
-                    allToks.Add(s.ToString());
-                }
-                return allToks;
+                return SpecialTokensMap.Values.Concat(ExtraSpecialTokens).Where(t => t != null).Select(t => t.Content).Distinct().ToList();
             }
         }
 
-        /// <summary>
-        /// List the ids of the special tokens(`'<unk>'`, `'<cls>'`, etc.) mapped to class attributes.
-        /// </summary>
-        public List<int> AllSpecialIds {
-            get {
-                return ConvertTokensToIds(AllSpecialTokens);
-            }
-        }
-
-        protected abstract List<int> ConvertTokensToIds(List<string> tokens);
-        protected abstract int ConvertTokensToIds(string tokens);
-
-        public int AddSpecialTokens(Dictionary<string, AddedToken> specialTokensDict, bool replaceAdditionalSpecialTokens = true) {
-            throw new System.NotImplementedException();
-        }
-
-        public int AddTokens(string newTokens) {
-            throw new System.NotImplementedException();
-        }
-
-        public int AddTokens(AddedToken newTokens) {
-            throw new System.NotImplementedException();
-        }
-
-        public int AddTokens(List<AddedToken> newTokens) {
-            throw new System.NotImplementedException();
-        }
-
-        HashSet<AddedToken> ISpecialTokensMixin.SpecialTokensMap => throw new NotImplementedException();
-
-        /// <summary>
-        /// A map containing special tokens (`cls_token`, `unk_token`, etc.)
-        /// </summary>
-        public HashSet<Token> SpecialTokensMapExtended {
-            get {
-                var tokens = new HashSet<Token>(
-                    new Token[] {
-                        BosToken,
-                        EosToken,
-                        UnkToken,
-                        SepToken,
-                        PadToken,
-                        ClsToken,
-                        MaskToken,
-                    }.Where(value => value != null)
-                );
-                return tokens;
-            }
-        }
-
-        /// <summary>
-        /// All the special tokens (`'<unk>'`, `'<cls>'`, etc.), the order has nothing to do
-        /// with the index of each tokens. If you want to know the correct indices, check
-        /// <see cref="PreTrainedTokenizer.AddedTokensEncoder"/>.
-        /// 
-        /// Don't convert tokens of `tokenizers.AddedToken` type to string so they can be used
-        /// to control more finely how special tokens are tokenized.
-        /// </summary>
-        public List<Token> AllSpecialTokensExtended {
-            get {
-                List<Token> allTokens = new List<Token>();
-                HashSet<Token> seen = new HashSet<Token>();
-
-                foreach (Token token in SpecialTokensMapExtended) {
-                    if (!seen.Contains(token)) {
-                        allTokens.Add(token);
-                        seen.Add(token);
-                    }
-                }
-
-                var tokensToAdd = AdditionalSpecialTokens.Where(token => !seen.Contains(token));
-                allTokens.AddRange(tokensToAdd);
-                seen.UnionWith(tokensToAdd);
-
-                return allTokens;
-            }
-        }
-
-        public void InitializeSpecialTokensMixin(List<Token> additionalSpecialTokens = null) {
-            BosToken = Config.BosToken;
-            EosToken = Config.EosToken;
-            UnkToken = Config.UnkToken;
-            SepToken = Config.SepToken;
-            PadToken = Config.PadToken;
-            ClsToken = Config.ClsToken;
-            MaskToken = Config.MaskToken;
-            PadTokenTypeID = 0;
-
-            if (additionalSpecialTokens != null) {
-                AdditionalSpecialTokens = additionalSpecialTokens;
-            } else {
-                AdditionalSpecialTokens = new List<Token>();
-            }
-        }
+        /// <summary>The ids of <see cref="AllSpecialTokens"/>.</summary>
+        public List<int> AllSpecialIds => AllSpecialTokens.Select(ConvertTokensToIds).Where(id => id.HasValue).Select(id => id.Value).ToList();
     }
 }

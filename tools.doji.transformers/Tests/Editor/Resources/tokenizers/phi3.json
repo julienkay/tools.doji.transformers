@@ -3,7 +3,9 @@
  "revision": "f39ac1d28e925b323eae81227eaba4464caced4e",
  "repo": "julienkay/tiny-random-LlamaForCausalLM-onnx",
  "subfolder": "tokenizers/phi3/",
- "class": "LlamaTokenizer",
+ "transformers": "5.24.0",
+ "model_type": "phi3",
+ "class": "TokenizersBackend",
  "cases": [
   {
    "text": "",
@@ -2018,16 +2020,14 @@
   {
    "text": "<|user|>\nhi<|end|>\n<|assistant|>\n",
    "ids": [
-    29871,
     32010,
-    2918,
+    7251,
     32007,
     32001
    ],
-   "decoded": "<|user|> hi <|end|> <|assistant|>",
-   "decoded_skip_special": "<|user|> hi <|end|> <|assistant|>",
+   "decoded": "<|user|> hi<|end|><|assistant|>",
+   "decoded_skip_special": "hi",
    "decoded_each": [
-    "",
     "<|user|>",
     "hi",
     "<|end|>",
@@ -2050,10 +2050,10 @@
    "ids": [
     263,
     32007,
-    29890
+    289
    ],
-   "decoded": "a <|end|> b",
-   "decoded_skip_special": "a <|end|> b",
+   "decoded": "a<|end|> b",
+   "decoded_skip_special": "a b",
    "decoded_each": [
     "a",
     "<|end|>",
@@ -2066,8 +2066,8 @@
     259,
     32007
    ],
-   "decoded": "  <|end|>",
-   "decoded_skip_special": "  <|end|>",
+   "decoded": " <|end|>",
+   "decoded_skip_special": " ",
    "decoded_each": [
     " ",
     "<|end|>"
@@ -2077,16 +2077,396 @@
    "text": "<s>hi</s>",
    "ids": [
     1,
-    2918,
+    7251,
     2
    ],
-   "decoded": "<s> hi </s>",
-   "decoded_skip_special": "hi </s>",
+   "decoded": "<s> hi</s>",
+   "decoded_skip_special": "hi</s>",
    "decoded_each": [
     "<s>",
     "hi",
     "</s>"
    ]
+  }
+ ],
+ "calls": [
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "text_pair": "How are you?"
+   },
+   "output": {
+    "input_ids": [
+     15043,
+     3186,
+     29991,
+     1128,
+     526,
+     366,
+     29973
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "max_length": 6,
+    "truncation": true
+   },
+   "output": {
+    "input_ids": [
+     15043,
+     3186,
+     29991
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "text_pair": "How are you doing today, my friend?",
+    "max_length": 9,
+    "truncation": true
+   },
+   "output": {
+    "input_ids": [
+     15043,
+     3186,
+     29991,
+     1128,
+     526,
+     366,
+     2599,
+     9826,
+     29892
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "Hello world! How are you?",
+    "text_pair": "Fine.",
+    "max_length": 7,
+    "truncation": "only_first"
+   },
+   "output": {
+    "input_ids": [
+     15043,
+     3186,
+     29991,
+     1128,
+     526,
+     28896,
+     29889
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "a photo of a cat",
+    "padding": "max_length",
+    "max_length": 12
+   },
+   "output": {
+    "input_ids": [
+     32000,
+     32000,
+     32000,
+     32000,
+     32000,
+     32000,
+     32000,
+     263,
+     15373,
+     310,
+     263,
+     6635
+    ],
+    "attention_mask": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     1,
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "a photo of a cat",
+    "padding": "max_length",
+    "max_length": 4,
+    "truncation": true
+   },
+   "output": {
+    "input_ids": [
+     263,
+     15373,
+     310,
+     263
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": [
+     "a photo of a cat",
+     "a dog",
+     ""
+    ],
+    "padding": true
+   },
+   "output": {
+    "input_ids": [
+     [
+      263,
+      15373,
+      310,
+      263,
+      6635
+     ],
+     [
+      32000,
+      32000,
+      32000,
+      263,
+      11203
+     ],
+     [
+      32000,
+      32000,
+      32000,
+      32000,
+      32000
+     ]
+    ],
+    "attention_mask": [
+     [
+      1,
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      0,
+      0,
+      0,
+      1,
+      1
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": [
+     "a photo of a cat",
+     "a dog"
+    ],
+    "padding": true,
+    "pad_to_multiple_of": 8
+   },
+   "output": {
+    "input_ids": [
+     [
+      32000,
+      32000,
+      32000,
+      263,
+      15373,
+      310,
+      263,
+      6635
+     ],
+     [
+      32000,
+      32000,
+      32000,
+      32000,
+      32000,
+      32000,
+      263,
+      11203
+     ]
+    ],
+    "attention_mask": [
+     [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1
+     ]
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": [
+     "first text",
+     "second"
+    ],
+    "text_pair": [
+     "pair one",
+     "pair two is longer"
+    ],
+    "padding": "longest"
+   },
+   "output": {
+    "input_ids": [
+     [
+      32000,
+      937,
+      1426,
+      5101,
+      697
+     ],
+     [
+      1473,
+      5101,
+      1023,
+      338,
+      5520
+     ]
+    ],
+    "attention_mask": [
+     [
+      0,
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      1,
+      1,
+      1
+     ]
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "add_special_tokens": false,
+    "return_special_tokens_mask": true
+   },
+   "output": {
+    "input_ids": [
+     15043,
+     3186,
+     29991
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1
+    ],
+    "special_tokens_mask": [
+     0,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "return_special_tokens_mask": true,
+    "return_token_type_ids": true
+   },
+   "output": {
+    "input_ids": [
+     15043,
+     3186,
+     29991
+    ],
+    "token_type_ids": [
+     0,
+     0,
+     0
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1
+    ],
+    "special_tokens_mask": [
+     0,
+     0,
+     0
+    ]
+   }
   }
  ],
  "chats": [

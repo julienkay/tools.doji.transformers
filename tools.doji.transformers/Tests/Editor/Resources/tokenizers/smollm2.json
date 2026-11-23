@@ -3,7 +3,9 @@
  "revision": "1675db936b735d669df5a25bb238179b110486e2",
  "repo": "julienkay/tiny-random-LlamaForCausalLM-onnx",
  "subfolder": "",
- "class": "GPT2TokenizerFast",
+ "transformers": "5.24.0",
+ "model_type": "llama",
+ "class": "GPT2Tokenizer",
  "cases": [
   {
    "text": "",
@@ -869,8 +871,7 @@
     112,
     164,
     113,
-    216,
-    164,
+    16936,
     114,
     164,
     115,
@@ -886,8 +887,7 @@
     "�",
     "�",
     "�",
-    " ",
-    "�",
+    " �",
     "�",
     "�",
     "�",
@@ -1898,20 +1898,20 @@
    "text": "½ ¼ ¾ €",
    "ids": [
     16738,
-    216,
-    28151,
-    216,
-    43124,
+    3351,
+    137,
+    3351,
+    139,
     24927
    ],
    "decoded": "½ ¼ ¾ €",
    "decoded_skip_special": "½ ¼ ¾ €",
    "decoded_each": [
     "½",
-    " ",
-    "¼",
-    " ",
-    "¾",
+    " �",
+    "�",
+    " �",
+    "�",
     " €"
    ]
   },
@@ -2073,6 +2073,386 @@
     "\n",
     "<|im_end|>"
    ]
+  }
+ ],
+ "calls": [
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "text_pair": "How are you?"
+   },
+   "output": {
+    "input_ids": [
+     19556,
+     905,
+     17,
+     2020,
+     359,
+     346,
+     47
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "max_length": 6,
+    "truncation": true
+   },
+   "output": {
+    "input_ids": [
+     19556,
+     905,
+     17
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "text_pair": "How are you doing today, my friend?",
+    "max_length": 9,
+    "truncation": true
+   },
+   "output": {
+    "input_ids": [
+     19556,
+     905,
+     17,
+     2020,
+     359,
+     346,
+     2567,
+     1834,
+     28
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "Hello world! How are you?",
+    "text_pair": "Fine.",
+    "max_length": 7,
+    "truncation": "only_first"
+   },
+   "output": {
+    "input_ids": [
+     19556,
+     905,
+     17,
+     1073,
+     359,
+     47373,
+     30
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "a photo of a cat",
+    "padding": "max_length",
+    "max_length": 12
+   },
+   "output": {
+    "input_ids": [
+     81,
+     8003,
+     282,
+     253,
+     2644,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2,
+     2
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "a photo of a cat",
+    "padding": "max_length",
+    "max_length": 4,
+    "truncation": true
+   },
+   "output": {
+    "input_ids": [
+     81,
+     8003,
+     282,
+     253
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": [
+     "a photo of a cat",
+     "a dog",
+     ""
+    ],
+    "padding": true
+   },
+   "output": {
+    "input_ids": [
+     [
+      81,
+      8003,
+      282,
+      253,
+      2644
+     ],
+     [
+      81,
+      2767,
+      2,
+      2,
+      2
+     ],
+     [
+      2,
+      2,
+      2,
+      2,
+      2
+     ]
+    ],
+    "attention_mask": [
+     [
+      1,
+      1,
+      1,
+      1,
+      1
+     ],
+     [
+      1,
+      1,
+      0,
+      0,
+      0
+     ],
+     [
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": [
+     "a photo of a cat",
+     "a dog"
+    ],
+    "padding": true,
+    "pad_to_multiple_of": 8
+   },
+   "output": {
+    "input_ids": [
+     [
+      81,
+      8003,
+      282,
+      253,
+      2644,
+      2,
+      2,
+      2
+     ],
+     [
+      81,
+      2767,
+      2,
+      2,
+      2,
+      2,
+      2,
+      2
+     ]
+    ],
+    "attention_mask": [
+     [
+      1,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0
+     ],
+     [
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": [
+     "first text",
+     "second"
+    ],
+    "text_pair": [
+     "pair one",
+     "pair two is longer"
+    ],
+    "padding": "longest"
+   },
+   "output": {
+    "input_ids": [
+     [
+      7298,
+      1694,
+      13040,
+      582,
+      2
+     ],
+     [
+      12247,
+      13040,
+      827,
+      314,
+      2848
+     ]
+    ],
+    "attention_mask": [
+     [
+      1,
+      1,
+      1,
+      1,
+      0
+     ],
+     [
+      1,
+      1,
+      1,
+      1,
+      1
+     ]
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "add_special_tokens": false,
+    "return_special_tokens_mask": true
+   },
+   "output": {
+    "input_ids": [
+     19556,
+     905,
+     17
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1
+    ],
+    "special_tokens_mask": [
+     0,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "return_special_tokens_mask": true,
+    "return_token_type_ids": true
+   },
+   "output": {
+    "input_ids": [
+     19556,
+     905,
+     17
+    ],
+    "token_type_ids": [
+     0,
+     0,
+     0
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1
+    ],
+    "special_tokens_mask": [
+     0,
+     0,
+     0
+    ]
+   }
   }
  ],
  "chats": [

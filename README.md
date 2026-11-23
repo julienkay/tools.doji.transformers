@@ -12,7 +12,7 @@ A Unity package to run pretrained transformer models with Unity Inference Engine
 This is essentially a C# port of Hugging Face’s [transformers] library.
 
 There are two use cases for this package right now:
-- It's used by the [tools.doji.diffusers] package to run Stable Diffusion models in Unity (most SD models use a ClipTokenizer for prompting, newer pipelines require additional ones like T5Tokenizer)
+- It's used by the [tools.doji.diffusers] package to run Stable Diffusion models in Unity (most SD models use a CLIPTokenizer for prompting, newer pipelines require additional ones like T5Tokenizer)
 - To run small LLMs like [SmolLM2](https://huggingface.co/julienkay/SmolLM2-135M-Instruct-onnx) in Unity
 
 ### Installation
@@ -53,11 +53,11 @@ The models are plain ONNX exports with the input and output names of optimum (`i
 ## Roadmap:
 
 Tokenizers
+- [x] TokenizersBackend (any `tokenizer.json`, as in transformers v5)
 - [x] CLIPTokenizer
-- [x] LLamaTokenizer
+- [x] LlamaTokenizer
 - [x] GPT2Tokenizer
-- [x] PreTrainedTokenizerFast (byte-level BPE `tokenizer.json`)
-- [ ] T5Tokenizer
+- [x] Qwen2Tokenizer
 
 LLMs
 - [x] Llama (SmolLM2)

@@ -3,7 +3,9 @@
  "revision": "607a30d783dfa663caf39e06633721c8d4cfcd7e",
  "repo": "julienkay/tiny-random-LlamaForCausalLM-onnx",
  "subfolder": "tokenizers/gpt2/",
- "class": "GPT2TokenizerFast",
+ "transformers": "5.24.0",
+ "model_type": "gpt2",
+ "class": "GPT2Tokenizer",
  "cases": [
   {
    "text": "",
@@ -2001,6 +2003,219 @@
     "of",
     "text"
    ]
+  }
+ ],
+ "calls": [
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "text_pair": "How are you?"
+   },
+   "output": {
+    "input_ids": [
+     15496,
+     995,
+     0,
+     2437,
+     389,
+     345,
+     30
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "max_length": 6,
+    "truncation": true
+   },
+   "output": {
+    "input_ids": [
+     15496,
+     995,
+     0
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "text_pair": "How are you doing today, my friend?",
+    "max_length": 9,
+    "truncation": true
+   },
+   "output": {
+    "input_ids": [
+     15496,
+     995,
+     0,
+     2437,
+     389,
+     345,
+     1804,
+     1909,
+     11
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "Hello world! How are you?",
+    "text_pair": "Fine.",
+    "max_length": 7,
+    "truncation": "only_first"
+   },
+   "output": {
+    "input_ids": [
+     15496,
+     995,
+     0,
+     1374,
+     389,
+     34389,
+     13
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "a photo of a cat",
+    "padding": "max_length",
+    "max_length": 12
+   },
+   "error": "ValueError"
+  },
+  {
+   "kwargs": {
+    "text": "a photo of a cat",
+    "padding": "max_length",
+    "max_length": 4,
+    "truncation": true
+   },
+   "error": "ValueError"
+  },
+  {
+   "kwargs": {
+    "text": [
+     "a photo of a cat",
+     "a dog",
+     ""
+    ],
+    "padding": true
+   },
+   "error": "ValueError"
+  },
+  {
+   "kwargs": {
+    "text": [
+     "a photo of a cat",
+     "a dog"
+    ],
+    "padding": true,
+    "pad_to_multiple_of": 8
+   },
+   "error": "ValueError"
+  },
+  {
+   "kwargs": {
+    "text": [
+     "first text",
+     "second"
+    ],
+    "text_pair": [
+     "pair one",
+     "pair two is longer"
+    ],
+    "padding": "longest"
+   },
+   "error": "ValueError"
+  },
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "add_special_tokens": false,
+    "return_special_tokens_mask": true
+   },
+   "output": {
+    "input_ids": [
+     15496,
+     995,
+     0
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1
+    ],
+    "special_tokens_mask": [
+     0,
+     0,
+     0
+    ]
+   }
+  },
+  {
+   "kwargs": {
+    "text": "Hello world!",
+    "return_special_tokens_mask": true,
+    "return_token_type_ids": true
+   },
+   "output": {
+    "input_ids": [
+     15496,
+     995,
+     0
+    ],
+    "token_type_ids": [
+     0,
+     0,
+     0
+    ],
+    "attention_mask": [
+     1,
+     1,
+     1
+    ],
+    "special_tokens_mask": [
+     0,
+     0,
+     0
+    ]
+   }
   }
  ],
  "chats": []

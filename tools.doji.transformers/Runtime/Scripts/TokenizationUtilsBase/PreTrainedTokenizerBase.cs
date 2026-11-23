@@ -1,767 +1,330 @@
+using Doji.AI.Tokenizers;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Doji.AI.Transformers {
 
     public enum Padding {
-
-        /// <summary>
-        /// no padding is applied
-        /// </summary>
+        /// <summary>No padding.</summary>
         None,
-
-        /// <summary>
-        /// pad to the longest sequence in the batch
-        /// (no padding is applied if you only provide a single sequence).
-        /// </summary>
+        /// <summary>Pads to the longest sequence of the batch. A single sequence is not padded.</summary>
         Longest,
-
-        /// <summary>
-        /// pad to a length specified by the max_length argument or the maximum length
-        /// accepted by the model if no max_length is provided (max_length=None).
-        /// Padding will still be applied if you only provide a single sequence.
-        /// </summary>
+        /// <summary>Pads to <c>maxLength</c>, or to <see cref="PreTrainedTokenizerBase.ModelMaxLength"/> without it.</summary>
         MaxLength
     }
 
     public enum Truncation {
-
-        /// <summary>
-        /// no truncation is applied
-        /// </summary>
+        /// <summary>No truncation.</summary>
         None,
-
-        /// <summary>
-        /// truncate to a maximum length specified by the max_length argument or the maximum
-        /// length accepted by the model if no max_length is provided (max_length=None).
-        /// This will truncate token by token, removing a token from the longest sequence
-        /// in the pair until the proper length is reached.
-        /// </summary>
+        /// <summary>Truncates the longest sequence of a pair first, so that both keep about the same length.</summary>
         LongestFirst,
-
-        /// <summary>
-        /// truncate to a maximum length specified by the max_length argument or the maximum
-        /// length accepted by the model if no max_length is provided (max_length=None).
-        /// This will only truncate the second sentence of a pair if a pair of sequences
-        /// (or a batch of pairs of sequences) is provided.
-        /// </summary>
+        /// <summary>Truncates only the second sequence of a pair.</summary>
         OnlySecond,
-
-        /// <summary>
-        /// truncate to a maximum length specified by the max_length argument or the maximum
-        /// length accepted by the model if no max_length is provided (max_length=None).
-        /// This will only truncate the first sentence of a pair if a pair of sequences
-        /// (or a batch of pairs of sequences) is provided.
-        /// </summary>
+        /// <summary>Truncates only the first sequence of a pair, or the single sequence.</summary>
         OnlyFirst
     }
 
     public enum Side { Right, Left }
 
     /// <summary>
-    /// Base class common to both the slow and the fast tokenization classes.
-    /// (host all the user fronting encoding methods)
-    /// Special token mixing (host the special tokens logic) implemented via
-    /// <see cref="ISpecialTokensMixin"/> 
-    /// Encoding (wrap the dictionary of output with special method for
-    /// the Fast tokenizers) via <see cref="Encoding"/>
+    /// The base of all tokenizers: encoding with special tokens, truncation and padding, decoding, the special tokens
+    /// and the chat template. <see cref="TokenizersBackend"/> implements it with the tokenizers library.
     /// </summary>
     public abstract partial class PreTrainedTokenizerBase {
 
         public const string TOKENIZER_CONFIG_FILE = "tokenizer_config.json";
 
-        protected TokenizerConfig Config { get; set; }
+        protected TokenizerConfig Config { get; }
 
-        public int ModelMaxLength => Config.ModelMaxLength.Value;
-        public Side PaddingSide => Config.PaddingSide.Value;
-        public Side TruncationSide => Config.TruncationSide.Value;
-        public List<string> ModelInputNames => Config.ModelInputNames;
-        public bool CleanUpTokenizationSpaces => Config.CleanUpTokenizationSpaces.Value;
-        public bool SplitSpecialTokens => Config.SplitSpecialTokens.Value;
-        public HashSet<string> DeprecationWarnings { get; private set; }
-        public bool InTargetContextManager { get; private set; }
+        /// <summary>The longest input the model takes, the default length of truncation and padding.</summary>
+        public int ModelMaxLength => Config.ModelMaxLength ?? int.MaxValue;
+        public Side PaddingSide { get; set; }
+        public Side TruncationSide { get; set; }
+        /// <summary>The inputs the model takes, which <see cref="Encode"/> returns by default.</summary>
+        public List<string> ModelInputNames { get; }
+        public bool CleanUpTokenizationSpaces => Config.CleanUpTokenizationSpaces ?? false;
 
-        public abstract bool Fast { get; }
-
-        public PreTrainedTokenizerBase(TokenizerConfig config) {
+        /// <param name="defaultModelInputNames">The model inputs of the tokenizer class, which the config may change.</param>
+        /// <param name="defaultPaddingSide">The padding side of the tokenizer class, which the config may change.</param>
+        protected PreTrainedTokenizerBase(TokenizerConfig config, List<string> defaultModelInputNames = null, Side defaultPaddingSide = Side.Right) {
             Config = config ?? new TokenizerConfig();
-            // set default if not initialized in config
-            Config.ModelMaxLength ??= int.MaxValue;
-            Config.PaddingSide ??= Side.Right;
-            Config.TruncationSide ??= Side.Right;
-            Config.ModelInputNames ??= new List<string>() { "input_ids", "token_type_ids", "attention_mask" };
-            // The default of transformers since v4.45.
-            Config.CleanUpTokenizationSpaces ??= false;
-            Config.SplitSpecialTokens ??= false;
+            PaddingSide = Config.PaddingSide ?? defaultPaddingSide;
+            TruncationSide = Config.TruncationSide ?? Side.Right;
+            ModelInputNames = Config.ModelInputNames ?? defaultModelInputNames ?? new List<string> { "input_ids", "attention_mask" };
         }
 
-        protected virtual void Initialize() {
-            DeprecationWarnings = new HashSet<string> { };
-            InTargetContextManager = false;
-            InitializeSpecialTokensMixin();
+        /// <summary>The number of tokens in the vocabulary, without the added tokens.</summary>
+        public abstract int VocabSize { get; }
+
+        /// <summary>The number of tokens in the vocabulary, with the added tokens.</summary>
+        public abstract int Count { get; }
+
+        /// <summary>The vocabulary with the added tokens, by token.</summary>
+        public abstract Dictionary<string, int> GetVocab();
+
+        /// <summary>Splits a text into tokens, without special tokens.</summary>
+        public abstract List<string> Tokenize(string text);
+
+        /// <summary>The id of a token, or the id of the unknown token if the vocabulary does not have it.</summary>
+        public abstract int? ConvertTokensToIds(string token);
+
+        public List<int?> ConvertTokensToIds(IEnumerable<string> tokens) => tokens.Select(ConvertTokensToIds).ToList();
+
+        /// <summary>The token of an id, or null.</summary>
+        public abstract string ConvertIdsToTokens(int id);
+
+        public List<string> ConvertIdsToTokens(IEnumerable<int> ids, bool skipSpecialTokens = false) {
+            var special = skipSpecialTokens ? new HashSet<int>(AllSpecialIds) : null;
+            return ids.Where(id => special == null || !special.Contains(id)).Select(ConvertIdsToTokens).ToList();
         }
+
+        /// <summary>Joins tokens into a text, as the decoder of the tokenizer does.</summary>
+        public abstract string ConvertTokensToString(List<string> tokens);
+
+        /// <summary>The ids of a text, without special tokens.</summary>
+        protected abstract List<int> EncodeWithoutSpecialTokens(string text);
+
+        /// <summary>The ids of a text split into words, without special tokens.</summary>
+        protected abstract List<int> EncodeWithoutSpecialTokens(IEnumerable<string> words);
+
+        /// <summary>The number of special tokens <see cref="Encode"/> adds to a sequence or a pair.</summary>
+        public abstract int NumSpecialTokensToAdd(bool pair = false);
 
         /// <summary>
-        /// Returns the number of added tokens when encoding a sequence with special tokens.
+        /// Adds the special tokens to the ids of a sequence or a pair, and gives the type ids and the special tokens
+        /// mask of the result.
         /// </summary>
-        /// <param name="pair">Whether the number of added tokens should be computed in the
-        /// case of a sequence pair or a single sequence.</param>
-        protected virtual int NumSpecialTokensToAdd(bool pair = false) {
-            throw new NotImplementedException($"This tokenizer does not implement {nameof(NumSpecialTokensToAdd)}");
-        }
+        protected abstract (List<int> Ids, List<int> TypeIds, List<int> SpecialTokensMask) PostProcess(List<int> ids, List<int> pairIds, bool addSpecialTokens);
 
         /// <summary>
-        /// Find the correct padding/truncation strategy
+        /// Encodes a text or a batch of texts, and a pair, for the model.
         /// </summary>
-        /// <remarks>
-        /// Tried to remove old/deprecated behavior from original code.
-        /// </remarks>
-        private void GetPaddingTruncationStrategies(ref Padding padding, ref Truncation truncation, ref int? maxLength) {
-            throw new NotImplementedException();
-        }
-
-        /// <inheritdoc cref="Encode{T}(T, T, string, string, bool, Padding, Truncation, int?, int, int?, bool?, bool?, bool, bool, bool, bool)"/>
+        /// <param name="text">A text, a list of texts, a text split into words, or a list of those.</param>
+        /// <param name="textPair">The second text of a pair, or a list of them for a batch.</param>
+        /// <param name="addSpecialTokens">Whether to add the special tokens of the model, such as a BOS token.</param>
+        /// <param name="maxLength">The length of truncation and of <see cref="Padding.MaxLength"/>. Without it, <see cref="ModelMaxLength"/>.</param>
+        /// <param name="returnTokenTypeIds">Whether to return <c>token_type_ids</c>. By default, if <see cref="ModelInputNames"/> has them.</param>
+        /// <param name="returnAttentionMask">Whether to return <c>attention_mask</c>. By default, if <see cref="ModelInputNames"/> has it.</param>
         public Encoding Encode(
             Input text,
             Input textPair = null,
-            string textTarget = null,
-            string textPairTarget = null,
             bool addSpecialTokens = true,
             Padding padding = Padding.None,
             Truncation truncation = Truncation.None,
             int? maxLength = null,
-            int stride = 0,
-            bool isSplitIntoWords = false,
             int? padToMultipleOf = null,
             bool? returnTokenTypeIds = null,
             bool? returnAttentionMask = null,
-            bool returnOverflowingTokens = false,
             bool returnSpecialTokensMask = false,
-            bool returnOffsetsMapping = false,
             bool returnLength = false)
         {
-            return Encode<Input>(text, textPair, textTarget, textPairTarget, addSpecialTokens,
-                padding, truncation, maxLength, stride, isSplitIntoWords, padToMultipleOf, returnTokenTypeIds,
-                returnAttentionMask, returnOverflowingTokens, returnSpecialTokensMask,
-                returnOffsetsMapping, returnLength);
+            if (text == null) {
+                throw new ArgumentNullException(nameof(text));
+            }
+            if (maxLength == null && (truncation != Truncation.None || padding == Padding.MaxLength) && ModelMaxLength < int.MaxValue) {
+                maxLength = ModelMaxLength;
+            }
+            if (padding != Padding.None && PadTokenId == null) {
+                throw new InvalidOperationException("Padding needs a pad token, and the tokenizer has none.");
+            }
+            if (padding == Padding.MaxLength && maxLength == null) {
+                throw new ArgumentException("Padding to the max length needs a max length, and the model has none.");
+            }
+            var options = new EncodeOptions {
+                AddSpecialTokens = addSpecialTokens,
+                Truncation = truncation,
+                MaxLength = maxLength,
+                ReturnTokenTypeIds = returnTokenTypeIds ?? ModelInputNames.Contains("token_type_ids"),
+                ReturnAttentionMask = returnAttentionMask ?? ModelInputNames.Contains("attention_mask"),
+                ReturnSpecialTokensMask = returnSpecialTokensMask,
+            };
+
+            if (!text.IsBatch()) {
+                InputEncoding single = EncodeOne(Ids(text), textPair != null ? Ids(textPair) : null, options);
+                if (padding == Padding.MaxLength) {
+                    Pad(single, maxLength.Value, padToMultipleOf, options.ReturnAttentionMask);
+                } else if (padToMultipleOf != null && padding == Padding.Longest) {
+                    Pad(single, single.InputIds.Count(), padToMultipleOf, options.ReturnAttentionMask);
+                }
+                if (returnLength) {
+                    single["length"] = single.InputIds.Count();
+                }
+                return single;
+            }
+
+            var texts = ((IBatchInput)text).Sequence.Cast<object>().ToList();
+            List<object> pairs = null;
+            if (textPair != null) {
+                if (!textPair.IsBatch() || ((IBatchInput)textPair).Sequence.Count != texts.Count) {
+                    throw new ArgumentException("When encoding a batch, the pairs must be a list as long as the texts.");
+                }
+                pairs = ((IBatchInput)textPair).Sequence.Cast<object>().ToList();
+            }
+            var encodings = new List<InputEncoding>();
+            for (int i = 0; i < texts.Count; i++) {
+                encodings.Add(EncodeOne(Ids(texts[i]), pairs != null ? Ids(pairs[i]) : null, options));
+            }
+            int? padTo = padding switch {
+                Padding.MaxLength => maxLength,
+                Padding.Longest => encodings.Max(e => e.InputIds.Count()),
+                _ => null,
+            };
+            var batch = new BatchEncoding();
+            foreach (InputEncoding encoding in encodings) {
+                if (padTo != null) {
+                    Pad(encoding, padTo.Value, padToMultipleOf, options.ReturnAttentionMask);
+                }
+                if (returnLength) {
+                    encoding["length"] = new List<int> { encoding.InputIds.Count() };
+                }
+                batch.Append(encoding);
+            }
+            return batch;
+        }
+
+        private List<int> Ids(object input) {
+            return input switch {
+                string s => EncodeWithoutSpecialTokens(s),
+                SingleInput s => EncodeWithoutSpecialTokens(s.Text),
+                List<string> words => EncodeWithoutSpecialTokens(words),
+                PretokenizedSingleInput p => EncodeWithoutSpecialTokens(p.PretokenizedText),
+                _ => throw new ArgumentException($"Cannot encode a {input?.GetType().Name ?? "null"}."),
+            };
+        }
+
+        private struct EncodeOptions {
+            public bool AddSpecialTokens;
+            public Truncation Truncation;
+            public int? MaxLength;
+            public bool ReturnTokenTypeIds;
+            public bool ReturnAttentionMask;
+            public bool ReturnSpecialTokensMask;
         }
 
         /// <summary>
-        /// Main method to tokenize and prepare a prompt for the model.
+        /// Truncates the ids, keeping room for the special tokens, then adds the special tokens, as the tokenizers
+        /// library does.
         /// </summary>
-        /// <remarks>
-        /// PreTrainedTokenizerBase.__call__
-        /// </remarks>
-        public Encoding Encode<T>(
-            T text,
-            T textPair = null,
-            string textTarget = null,
-            string textPairTarget = null,
-            bool addSpecialTokens = true,
-            Padding padding = Padding.None,
-            Truncation truncation= Truncation.None,
-            int? maxLength = null,
-            int stride = 0,
-            bool isSplitIntoWords = false,
-            int? padToMultipleOf = null,
-            bool? returnTokenTypeIds = null,
-            bool? returnAttentionMask = null,
-            bool returnOverflowingTokens = false,
-            bool returnSpecialTokensMask = false,
-            bool returnOffsetsMapping = false,
-            bool returnLength = false) where T : Input
-        {
-            EncodingParams args = new EncodingParams(
-                text, textPair, textTarget, textPairTarget, addSpecialTokens, padding,
-                truncation, maxLength, stride, isSplitIntoWords, padToMultipleOf, returnTokenTypeIds,
-                returnAttentionMask, returnOverflowingTokens, returnSpecialTokensMask,
-                returnOffsetsMapping, returnLength
-            );
-
-            if (text == null && textTarget == null) {
-                throw new ArgumentException("You need to specify either `text` or `textTarget`.");
-            }
-
-            Encoding encodings = null;
-            Encoding targetEncodings = null;
-
-            if (text != null) {
-                // The context manager will send the inputs as normal texts and not textTarget,
-                // but we shouldn't change the input mode in this case.
-                if (!InTargetContextManager) {
-                    SwitchToInputMode();
+        private InputEncoding EncodeOne(List<int> ids, List<int> pairIds, EncodeOptions options) {
+            if (options.Truncation != Truncation.None && options.MaxLength != null) {
+                int numSpecial = options.AddSpecialTokens ? NumSpecialTokensToAdd(pairIds != null) : 0;
+                int maxLength = options.MaxLength.Value - numSpecial;
+                if (maxLength < 0) {
+                    throw new ArgumentException($"The max length {options.MaxLength} is shorter than the {numSpecial} special tokens.");
                 }
-                encodings = EncodePromptOne(args);
+                Truncate(ref ids, ref pairIds, maxLength, options.Truncation);
             }
-
-            if (textTarget != null) {
-                SwitchToTargetMode();
-                targetEncodings = EncodePromptOne(args);
+            var (sequence, typeIds, specialMask) = PostProcess(ids, pairIds, options.AddSpecialTokens);
+            var encoding = new InputEncoding { ["input_ids"] = sequence };
+            if (options.ReturnTokenTypeIds) {
+                encoding["token_type_ids"] = typeIds;
             }
-
-            // Leave back tokenizer in input mode
-            SwitchToInputMode();
-
-            if (textTarget == null) {
-                return encodings;
-            } else if (text == null) {
-                return targetEncodings;
-            } else {
-                encodings["labels"] = targetEncodings["input_ids"];
-                return encodings;
+            if (options.ReturnSpecialTokensMask) {
+                encoding["special_tokens_mask"] = specialMask;
             }
+            if (options.ReturnAttentionMask) {
+                encoding["attention_mask"] = Enumerable.Repeat(1, sequence.Count).ToList();
+            }
+            return encoding;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <remarks>
-        /// PretrainedTokenizerBase._call_one
-        /// </remarks>
-        private Encoding EncodePromptOne(EncodingParams args) {
-            // in contrast to the original implementation, type validity of 'text'
-            // and 'textPair' can be assumed here, given our typed representations
-
-            Input text = args.Text;
-            Input textPair = args.TextPair;
-            bool isBatched = args.Text is BatchInput || args.Text is PretokenizedBatchInput;
-
-            if (isBatched) {
-                if (textPair is not null && !textPair.IsBatch()) {
-                    throw new ArgumentException("when tokenizing batches of text, `text_pair` must be " +
-                        "a list or tuple with the same Length as `text`.");
-                }
-                if (textPair is not null && ((text as IBatchInput).Sequence.Count) != (textPair as IBatchInput).Sequence.Count) {
-                    throw new ArgumentException("when tokenizing batches of text, `text_pair` must be " +
-                        "a list or tuple with the same Length as `text`.");
-                }
-                if (textPair is not null) {
-                    throw new NotImplementedException("Usage of textPair is not yet implemented.");
-                }
-                return BatchEncodePlus(args);
-            } else {
-                return EncodePlus(args);
-            }
-        }
-
-        /// <summary>
-        /// Tokenize and prepare for the model a sequence or a pair of sequences.
-        /// </summary>
-        /// <remarks>
-        /// PretrainedTokenizerBase._encode_plus
-        /// </remarks>
-        protected virtual Encoding EncodePlus(EncodingParams args) {
-            throw new NotImplementedException($"This tokenizer does not implement {nameof(EncodePlus)}");
-        }
-
-        /// <summary>
-        ///  Tokenize and prepare for the model a list of sequences or a list of pairs of sequences.
-        /// </summary>
-        /// <remarks>
-        /// PretrainedTokenizerBase._batch_encode_plus
-        /// </remarks>
-        protected virtual Encoding BatchEncodePlus(EncodingParams args) {
-            throw new NotImplementedException($"This tokenizer does not implement {nameof(BatchEncodePlus)}");
-        }
-
-        /// <summary>
-        /// Converts a string into a sequence of tokens, replacing unknown tokens with the `unk_token`.
-        /// </summary>
-        protected virtual List<string> Tokenize(string text, EncodingParams args) {
-            throw new NotImplementedException($"This tokenizer does not implement {nameof(Tokenize)}");
-        }
-
-        //TODO: provide similar overloads like for the Encode() method, keeping the Params struct internal
-        public List<string> Tokenize(string text) {
-            return Tokenize(text, new EncodingParams(null));
-        }
-
-        /// <summary>
-        /// Pad a single encoded input or a batch of encoded inputs up to a
-        /// predefined length or to the max sequence length in the batch.
-        /// Padding side (left/right) padding token ids are defined at the
-        /// tokenizer level(with `self.padding_side`, `self.pad_token_id`
-        /// and `self.pad_token_type_id`).
-        /// Please note that with a fast tokenizer, using the `__call__`
-        /// method is faster than using a method to encode the text
-        /// followed by a call to the `pad` method to get a padded encoding.
-        /// </summary>
-        public void Pad(
-            Encoding encodedInputs,
-            Padding padding = Padding.None,
-            int? maxLength = null,
-            int? padToMultipleOf = null,
-            bool? returnAttentionMask = null)
-        {
-            if (Fast) {
-                string warningKey = "Asking-to-pad-a-fast-tokenizer";
-                if (!DeprecationWarnings.Contains(warningKey)) {
-                    Log.Info($"You're using a {GetType()}. Please note that with a fast tokenizer, " +
-                        $" using the `__call__` method is faster than using a method to encode the text followed by a call " +
-                        $"to the `pad` method to get a padded encoding.");
-                }
-
-                DeprecationWarnings.Add(warningKey);
-            }
-
-            // The model's main input name, usually `input_ids`, has be passed for padding
-            if (!encodedInputs.ContainsKey(ModelInputNames[0])) {
-                throw new ArgumentException($"You should supply an encoding or a list of encodings to this method that includes" +
-                    $"{ModelInputNames[0]}, but you provided {string.Join(", ", encodedInputs.Keys)}");
-            }
-
-            IList requiredInput = encodedInputs[ModelInputNames[0]] as IList;
-
-            if (requiredInput == null || (requiredInput is ICollection collection && collection.Count == 0)) {
-                if (returnAttentionMask == true) {
-                    encodedInputs["attention_mask"] = new List<int>();
-                }
+        /// <summary>The truncation of the tokenizers library (<c>truncate_encodings</c>).</summary>
+        private void Truncate(ref List<int> ids, ref List<int> pairIds, int maxLength, Truncation strategy) {
+            int total = ids.Count + (pairIds?.Count ?? 0);
+            if (total <= maxLength) {
                 return;
             }
-
-            // handle single inputs
-            if (encodedInputs is InputEncoding) {
-                Debug.Assert(requiredInput != null);
-                Debug.Assert(requiredInput.Count > 0);
-                Debug.Assert(requiredInput[0] is not ICollection);
-
-                _Pad(encodedInputs,
-                    maxLength,
-                    padding,
-                    padToMultipleOf,
-                    returnAttentionMask
-                );
+            if (pairIds == null) {
+                if (strategy == Truncation.OnlySecond) {
+                    throw new ArgumentException("Cannot truncate only the second sequence of a single sequence.");
+                }
+                ids = TruncateTo(ids, maxLength);
                 return;
             }
-
-            Debug.Assert(encodedInputs is BatchEncoding);
-
-            // handle batch inputs
-            int batchSize = requiredInput.Count;
-            if (!encodedInputs.Values.All(v => (v as IList).Count == batchSize)) {
-                throw new InvalidOperationException("Some items in the output dictionary have a different batch size than others.");
-            }
-
-            if (padding == Padding.Longest) {
-                maxLength = (requiredInput as List<List<int>>).Max(inputs => (inputs as IList).Count);
-                padding = Padding.MaxLength;
-            }
-
-            BatchEncoding inputs = new BatchEncoding(encodedInputs);
-            encodedInputs.Clear();
-            for (int i = 0; i < batchSize; i++) {
-                var paddedInput = new InputEncoding(inputs.ToDictionary(kvp => kvp.Key, kvp => ((IList)kvp.Value)[i]));
-                _Pad(paddedInput,
-                    maxLength,
-                    padding,
-                    padToMultipleOf,
-                    returnAttentionMask
-                );
-                (encodedInputs as BatchEncoding).Append(paddedInput);
-            }
-        }
-
-        private void _Pad(
-            Dictionary<string, object> encodedInputs,
-            int? maxLength,
-            Padding padding,
-            int? padToMultipleOf,
-            bool? returnAttentionMask)
-        {
-            if (returnAttentionMask == null) {
-                returnAttentionMask = encodedInputs.ContainsKey("attention_mask");
-            }
-
-            List<int> requiredInput = encodedInputs[ModelInputNames[0]] as List<int>;
-
-            if (padding == Padding.Longest) {
-                maxLength = requiredInput.Count;
-            }
-
-            if (maxLength != null && padToMultipleOf != null && (maxLength % padToMultipleOf != 0)) {
-                maxLength = ((maxLength.Value / padToMultipleOf.Value) + 1) * padToMultipleOf.Value;
-            }
-
-            bool needsToBePadded = padding != Padding.None && requiredInput.Count != maxLength;
-
-            // Initialize attention mask if not present.
-            if (returnAttentionMask == true && !encodedInputs.ContainsKey("attention_mask")) {
-                encodedInputs["attention_mask"] = Enumerable.Repeat(1, requiredInput.Count).ToList();
-            }
-
-            if (needsToBePadded) {
-                int difference = maxLength.Value - requiredInput.Count;
-
-                if (PaddingSide == Side.Right) {
-                    if (returnAttentionMask == true) {
-                        var atnMasks = (List<int>)encodedInputs["attention_mask"];
-                        encodedInputs["attention_mask"] = atnMasks.Concat(Enumerable.Repeat(0, difference)).ToList();
+            switch (strategy) {
+                case Truncation.LongestFirst: {
+                    int n1 = ids.Count, n2 = pairIds.Count;
+                    bool swap = n1 > n2;
+                    if (swap) {
+                        (n1, n2) = (n2, n1);
                     }
-                    if (encodedInputs.ContainsKey("token_type_ids")) {
-                        var ids = (List<int>)encodedInputs["token_type_ids"];
-                        encodedInputs["token_type_ids"] = ids.Concat(Enumerable.Repeat(PadTokenTypeID, difference)).ToList();
+                    n2 = n1 > maxLength ? n1 : Math.Max(n1, maxLength - n1);
+                    if (n1 + n2 > maxLength) {
+                        n1 = maxLength / 2;
+                        n2 = n1 + maxLength % 2;
                     }
-                    if (encodedInputs.ContainsKey("special_tokens_mask")) {
-                        var special = (List<int>)encodedInputs["special_tokens_mask"];
-                        encodedInputs["special_tokens_mask"] = special.Concat(Enumerable.Repeat(1, difference)).ToList();
+                    if (swap) {
+                        (n1, n2) = (n2, n1);
                     }
-                    encodedInputs[ModelInputNames[0]] = requiredInput.Concat(Enumerable.Repeat(PadTokenId.Value, difference)).ToList();
-                } else if (PaddingSide == Side.Left) {
-                    if (returnAttentionMask == true) {
-                        var atnMasks = (List<int>)encodedInputs["attention_mask"];
-                        encodedInputs["attention_mask"] = Enumerable.Repeat(0, difference).Concat(atnMasks).ToList();
-                    }
-                    if (encodedInputs.ContainsKey("token_type_ids")) {
-                        var ids = (List<int>)encodedInputs["token_type_ids"];
-                        encodedInputs["token_type_ids"] = Enumerable.Repeat(PadTokenTypeID, difference).Concat(ids).ToList();
-                    }
-                    if (encodedInputs.ContainsKey("special_tokens_mask")) {
-                        var special = (List<int>)encodedInputs["special_tokens_mask"];
-                        encodedInputs["special_tokens_mask"] = Enumerable.Repeat(1, difference).Concat(special).ToList();
-                    }
-                    encodedInputs[ModelInputNames[0]] = Enumerable.Repeat(PadTokenId.Value, difference).Concat(requiredInput).ToList();
-                } else {
-                    throw new ArgumentException("Invalid padding strategy: " + PaddingSide);
+                    ids = TruncateTo(ids, n1);
+                    pairIds = TruncateTo(pairIds, n2);
+                    break;
                 }
-            }
-        }
-
-        /// <summary>
-        /// Create the token type IDs corresponding to the sequences passed.
-        /// Should be overridden in a subclass if the model has a special way of building those.
-        /// </summary>
-        /// <param name="TokenIds0"></param>
-        /// <param name="TokenIds1"></param>
-        /// <returns></returns>
-        public virtual List<int> CreateTokenTypeIdsFromSequences(List<int> TokenIds0, List<int> TokenIds1 = null) {
-            if (TokenIds1 == null) {
-                return new List<int>(new int[TokenIds0.Count]);
-            }
-
-            List<int> tokenTypeIds = new List<int>(TokenIds0.Count + TokenIds1.Count);
-
-            for (int i = 0; i < TokenIds0.Count; i++) {
-                tokenTypeIds.Add(0);
-            }
-
-            for (int i = 0; i < TokenIds1.Count; i++) {
-                tokenTypeIds.Add(1);
-            }
-
-            return tokenTypeIds;
-        }
-
-        /// <summary>
-        /// Build model inputs from a sequence or a pair of sequence
-        /// for sequence classification tasks by concatenating and
-        /// adding special tokens.
-        /// This implementation does not add special tokens and this method should be overridden in a subclass.
-        /// </summary>
-        protected virtual List<int> BuildInputsWithSpecialTokens(List<int> TokenIds0, List<int> TokenIds1 = null) {
-            if (TokenIds1 == null) {
-                return TokenIds0;
-            }
-
-            List<int> result = new List<int>(TokenIds0);
-            result.AddRange(TokenIds1);
-            return result;
-        }
-
-        /// <summary>
-        /// Prepares a sequence of input id, or a pair of sequences of inputs ids
-        /// so that it can be used by the model. It adds special tokens, truncates
-        /// sequences if overflowing while taking into account the special tokens and
-        /// manages a moving window(with user defined stride) for overflowing tokens.
-        /// </summary>
-        /// <remarks>
-        /// Please Note, for *pair_ids* different than `None` and
-        /// * truncation_strategy = longest_first * or `True`, it is not possible to return
-        /// overflowing tokens. Such a combination of arguments will raise an error.
-        /// </remarks>
-        protected InputEncoding PrepareForModel(
-            EncodingParams args,
-            List<int> ids,
-            List<int> pairIds = null,
-            bool prependBatchAxis = false)
-        {
-            bool pair = pairIds != null;
-            int lenIds = ids.Count;
-            int lenPairIds = pair ? pairIds.Count : 0;
-            bool? returnTokenTypeIds = args.ReturnTokenTypeIds;
-            bool? returnAttentionMask = args.ReturnAttentionMask;
-
-            if (args.ReturnTokenTypeIds == true && !args.AddSpecialTokens) {
-                throw new ArgumentException(
-                    "Asking to return token_type_ids while setting add_special_tokens to False " +
-                    "results in an undefined behavior. Please set add_special_tokens to True or " +
-                    "set return_token_type_ids to None."
-                );
-            }
-
-            if (args.ReturnOverflowingTokens
-                && args.Truncation == Truncation.LongestFirst
-                && pairIds != null) {
-                throw new ArgumentException(
-                    "Not possible to return overflowing tokens for a pair of sequences with the " +
-                    "`longest_first`. Please select another truncation strategy than `longest_first`, " +
-                    "for instance `only_second` or `only_first`."
-                );
-            }
-
-            // Load from model defaults
-            if (!returnTokenTypeIds.HasValue) {
-                returnTokenTypeIds = ModelInputNames.Contains("token_type_ids");
-            }
-
-            if (!returnAttentionMask.HasValue) {
-                returnAttentionMask = ModelInputNames.Contains("attention_mask");
-            }
-
-            InputEncoding encodedInputs = new InputEncoding();
-
-            // Compute the total size of the returned encodings
-            int totalLen = lenIds + lenPairIds + (args.AddSpecialTokens ? NumSpecialTokensToAdd(pair) : 0);
-
-            // Truncation: Handle max sequence length
-            List<int> overflowingTokens = null;
-            if (args.Truncation != Truncation.None && args.MaxLength > 0 && totalLen > args.MaxLength) {
-                Tuple<List<int>, List<int>, List<int>> truncationResult = TruncateSequences(
-                    ids,
-                    pairIds,
-                    totalLen - args.MaxLength.Value,
-                    args.Truncation,
-                    args.Stride
-                );
-
-                ids = truncationResult.Item1;
-                pairIds = truncationResult.Item2;
-                overflowingTokens = truncationResult.Item3;
-            }
-
-            if (args.ReturnOverflowingTokens) {
-                Debug.Assert(args.MaxLength.HasValue);
-                encodedInputs["overflowing_tokens"] = overflowingTokens;
-                encodedInputs.NumTruncatedTokens = totalLen - args.MaxLength.Value;
-            }
-
-            // Add special tokens
-            List<int> sequence;
-            List<int> tokenTypeIds;
-            if (args.AddSpecialTokens) {
-                sequence = BuildInputsWithSpecialTokens(ids, pairIds);
-                tokenTypeIds = CreateTokenTypeIdsFromSequences(ids, pairIds);
-            } else {
-                sequence = pair ? (List<int>)ids.Concat(pairIds) : new List<int>(ids);
-                tokenTypeIds = new List<int>(Enumerable.Repeat(0, ids.Count));
-                if (pair) {
-                    tokenTypeIds.AddRange(Enumerable.Repeat(0, pairIds.Count));
-                }
-            }
-
-            // build output dictionary
-            encodedInputs["input_ids"] = sequence;
-            if (returnTokenTypeIds == true) {
-                encodedInputs["token_type_ids"] = tokenTypeIds;
-            } 
-            if (args.ReturnSpecialTokensMask) {
-                if (args.AddSpecialTokens) {
-                    encodedInputs["special_tokens_mask"] = GetSpecialTokensMask(ids, pairIds);
-                } else {
-                    encodedInputs["special_tokens_mask"] = Enumerable.Repeat(0, sequence.Count).ToList();
-                }
-            }
-
-            // Check lengths
-            EventualWarnAboutTooLongSequence(encodedInputs["input_ids"] as List<int>, args.MaxLength);
-
-            // Padding
-            if (args.Padding != Padding.None || returnAttentionMask == true) {
-                Pad(
-                    encodedInputs,
-                    maxLength: args.MaxLength,
-                    padding: args.Padding,
-                    padToMultipleOf: args.PadToMultipleOf,
-                    returnAttentionMask: returnAttentionMask
-                );
-            }
-
-            if (args.ReturnLength) {
-                encodedInputs.Length = (encodedInputs["input_ids"] as ICollection).Count;
-            }
-
-            encodedInputs.PrependBatchAxis = prependBatchAxis;
-            return encodedInputs;
-        }
-
-        public Tuple<List<int>, List<int>, List<int>> TruncateSequences(
-            List<int> ids,
-            List<int> pairIds = null,
-            int numTokensToRemove = 0,
-            Truncation Truncation = Truncation.None,
-            int stride = 0)
-        {
-            if (numTokensToRemove <= 0) {
-                return Tuple.Create(ids, pairIds, new List<int>());
-            }
-
-            Truncation strategy = Truncation;
-            List<int> overflowingTokens = new List<int>();
-
-            if (strategy == Truncation.OnlyFirst || (strategy == Truncation.LongestFirst && pairIds == null)) {
-                if (ids.Count > numTokensToRemove) {
-                    int windowLen = Math.Min(ids.Count, stride + numTokensToRemove);
-
-                    if (TruncationSide == Side.Left) {
-                        overflowingTokens = ids.GetRange(0, windowLen);
-                        ids = ids.GetRange(numTokensToRemove, ids.Count - numTokensToRemove);
-                    } else if (TruncationSide == Side.Right) {
-                        overflowingTokens = ids.GetRange(ids.Count - windowLen, windowLen);
-                        ids = ids.GetRange(0, ids.Count - numTokensToRemove);
+                case Truncation.OnlyFirst:
+                case Truncation.OnlySecond: {
+                    bool first = strategy == Truncation.OnlyFirst;
+                    int other = first ? pairIds.Count : ids.Count;
+                    if (other >= maxLength) {
+                        throw new ArgumentException("The sequence to truncate is too short to respect the max length.");
+                    }
+                    if (first) {
+                        ids = TruncateTo(ids, maxLength - other);
                     } else {
-                        throw new ArgumentException($"Invalid truncation strategy: {TruncationSide}, use 'left' or 'right'.");
+                        pairIds = TruncateTo(pairIds, maxLength - other);
                     }
-                } else {
-                    string errorMsg = $"We need to remove {numTokensToRemove} to truncate the input " +
-                                        $"but the first sequence has a length {ids.Count}. ";
-
-                    if (strategy == Truncation.OnlyFirst) {
-                        errorMsg += $"Please select another truncation strategy than {strategy}, " +
-                                    "for instance 'longest_first' or 'only_second'.";
-                    }
-
-                    Log.Error(errorMsg);
-                }
-            } else if (strategy == Truncation.LongestFirst) {
-                Log.Info("Be aware, overflowing tokens are not returned for the setting you have chosen, " +
-                    "i.e. sequence pairs with the '{Truncation.LongestFirst}' truncation strategy. " +
-                    "So the returned list will always be empty even if some tokens have been removed.");
-
-                for (int i = 0; i < numTokensToRemove; i++) {
-                    if (pairIds == null || ids.Count > pairIds.Count) {
-                        if (TruncationSide == Side.Right) {
-                            ids.RemoveAt(ids.Count - 1);
-                        } else if (TruncationSide == Side.Left) {
-                            ids.RemoveAt(0);
-                        } else {
-                            throw new ArgumentException("Invalid truncation strategy:" + TruncationSide);
-                        }
-                    } else {
-                        if (TruncationSide == Side.Right) {
-                            pairIds.RemoveAt(pairIds.Count - 1);
-                        } else if (TruncationSide == Side.Left) {
-                            pairIds.RemoveAt(0);
-                        } else {
-                            throw new ArgumentException("Invalid truncation strategy:" + TruncationSide);
-                        }
-                    }
-                }
-            } else if (strategy == Truncation.OnlySecond && pairIds != null) {
-                if (pairIds.Count > numTokensToRemove) {
-                    int windowLen = Math.Min(pairIds.Count, stride + numTokensToRemove);
-
-                    if (TruncationSide == Side.Right) {
-                        overflowingTokens = pairIds.GetRange(pairIds.Count - windowLen, windowLen);
-                        pairIds = pairIds.GetRange(0, pairIds.Count - numTokensToRemove);
-                    } else if (TruncationSide == Side.Left) {
-                        overflowingTokens = pairIds.GetRange(0, windowLen);
-                        pairIds = pairIds.GetRange(numTokensToRemove, pairIds.Count - numTokensToRemove);
-                    } else {
-                        throw new ArgumentException("Invalid truncation strategy:" + TruncationSide);
-                    }
-                } else {
-                    Log.Info($"We need to remove {numTokensToRemove} to truncate the input " +
-                        $"but the second sequence has a length {pairIds.Count}. " +
-                        $"Please select another truncation strategy than {strategy}, " +
-                        $"for instance 'longest_first' or 'only_first'.");
+                    break;
                 }
             }
-
-            return Tuple.Create(ids, pairIds, overflowingTokens);
         }
 
-        /// <summary>
-        /// Retrieves sequence ids from a token list that has no special tokens added.
-        /// This method is called when adding special tokens using the tokenizer
-        /// `prepare_for_model` or `encode_plus` methods.
-        /// </summary>
-        /// <returns>A list of integers in the range [0, 1]: 1 for a special token, 0 for a sequence token.</returns>
-        public virtual List<int> GetSpecialTokensMask(List<int> tokenIds0, List<int> tokenIds1, bool alreadyHasSpecialTokens = false) {
-            if (!(alreadyHasSpecialTokens && tokenIds1 == null)) {
-                throw new InvalidOperationException("You cannot use alreadyHasSpecialTokens=false with this tokenizer. " +
-                                                    "Please use a slow tokenizer to activate this argument. " +
-                                                    "Or set returnSpecialTokensMask=true when calling the encoding method " +
-                                                    "to get the special tokens mask in any tokenizer.");
+        private List<int> TruncateTo(List<int> ids, int length) {
+            if (ids.Count <= length) {
+                return ids;
             }
-
-            List<int> specialTokensMask = tokenIds0.Select(token => AllSpecialIds.Contains(token) ? 1 : 0).ToList();
-
-            return specialTokensMask;
+            return TruncationSide == Side.Right ? ids.GetRange(0, length) : ids.GetRange(ids.Count - length, length);
         }
 
-        /// <summary>
-        /// Depending on the input and internal state we might trigger a warning
-        /// about a sequence that is too long for its corresponding model
-        /// </summary>
-        public void EventualWarnAboutTooLongSequence(List<int> ids, int? maxLength) {
-            if (!maxLength.HasValue && ids.Count > ModelMaxLength) {
-                string warningKey = "sequence-length-is-longer-than-the-specified-maximum";
-
-                if (!DeprecationWarnings.Contains(warningKey)) {
-                    Log.Info($"Token indices sequence length is longer than the specified maximum sequence length " +
-                        $"for this model ({ids.Count} > {ModelMaxLength}). Running this sequence through the model will result" +
-                        $"in indexing errors");
+        /// <summary>Pads one encoding to <paramref name="length"/>, rounded up to a multiple of <paramref name="padToMultipleOf"/>.</summary>
+        private void Pad(InputEncoding encoding, int length, int? padToMultipleOf, bool attentionMask) {
+            if (padToMultipleOf is int multiple && multiple > 0 && length % multiple != 0) {
+                length = (length / multiple + 1) * multiple;
+            }
+            var ids = (List<int>)encoding["input_ids"];
+            int difference = length - ids.Count;
+            if (difference <= 0) {
+                return;
+            }
+            int padId = PadTokenId ?? throw new InvalidOperationException("Padding needs a pad token, and the tokenizer has none.");
+            void PadList(string key, int value) {
+                if (encoding.TryGetValue(key, out object list)) {
+                    var values = (List<int>)list;
+                    values.InsertRange(PaddingSide == Side.Right ? values.Count : 0, Enumerable.Repeat(value, difference));
                 }
-
-                DeprecationWarnings.Add(warningKey);
             }
+            if (attentionMask && !encoding.ContainsKey("attention_mask")) {
+                encoding["attention_mask"] = Enumerable.Repeat(1, ids.Count).ToList();
+            }
+            PadList("attention_mask", 0);
+            PadList("token_type_ids", PadTokenTypeId);
+            PadList("special_tokens_mask", 1);
+            PadList("input_ids", padId);
         }
 
-        public virtual void SwitchToInputMode() { }
-        public virtual void SwitchToTargetMode() { }
+        /// <summary>Decodes ids to text.</summary>
+        /// <param name="skipSpecialTokens">Whether to leave out the special tokens.</param>
+        /// <param name="cleanUpTokenizationSpaces">Whether to remove the spaces before punctuation. By default, <see cref="CleanUpTokenizationSpaces"/>.</param>
+        public abstract string Decode(IEnumerable<int> tokenIds, bool skipSpecialTokens = false, bool? cleanUpTokenizationSpaces = null);
 
-        /// <summary>
-        /// Returns the vocabulary as a dictionary of token to index.
-        /// `tokenizer.get_vocab()[token]` is equivalent to
-        /// `tokenizer.convert_tokens_to_ids(token)` when `token`
-        /// is in the vocab.
-        /// </summary>
-        protected virtual Dictionary<string, int> GetVocab() {
-            throw new NotImplementedException($"This tokenizer does not implement {nameof(GetVocab)}");
-        }
-
-        /// <summary>
-        /// Converts a sequence of tokens (string) in a single string.
-        /// </summary>
-        protected abstract string ConvertTokensToString(List<string> tokens);
-
-        public virtual List<string> BatchDecode() {
-            throw new NotImplementedException();
+        public List<string> BatchDecode(IEnumerable<IEnumerable<int>> sequences, bool skipSpecialTokens = false, bool? cleanUpTokenizationSpaces = null) {
+            return sequences.Select(ids => Decode(ids, skipSpecialTokens, cleanUpTokenizationSpaces)).ToList();
         }
 
         /// <summary>
-        /// Converts a sequence of ids in a string, using the tokenizer and vocabulary
-        /// with options to remove special tokens and clean up tokenization spaces.
-        /// Similar to doing <see cref="ConvertTokensToString(List{string})"/>.
+        /// Removes the spaces before punctuation and in English contractions, which word-level tokenizers leave.
         /// </summary>
-        /// <param name="tokenIds">  List of tokenized input ids. Can be obtained using the <see cref="Encode"/> method.</param>
-        /// <param name="skipSpecialTokens">Whether or not to remove special tokens in the decoding.</param>
-        /// <param name="cleanUpTokenizationSpaces"> Whether or not to clean up the tokenization spaces. If `None`, will default to <see cref="CleanUpTokenizationSpaces"/>.</param>
-        /// <returns>The decoded sentence.</returns>
-        public abstract string Decode(
-            List<int> tokenIds,
-            bool skipSpecialTokens = false,
-            bool? cleanUpTokenizationSpaces = null,
-            bool spacesBetweenSpecialTokens = true);
-
-        /// <summary>
-        /// Clean up a list of simple English tokenization artifacts like spaces before punctuations and abbreviated forms.
-        /// </summary>
-        /// <param name="outString">The text to clean up.</param>
-        /// <returns>The cleaned-up string.</returns>
-        protected static string CleanUpTokenization(string outString) {
-            return outString
+        public static string CleanUpTokenization(string text) {
+            return text
                 .Replace(" .", ".")
                 .Replace(" ?", "?")
                 .Replace(" !", "!")
