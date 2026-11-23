@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Microsoft.ML.Tokenizers;
+using Doji.AI.Tokenizers;
 
 namespace Doji.AI.Transformers {
 
@@ -10,18 +10,22 @@ namespace Doji.AI.Transformers {
 
         private static readonly string SPIECE_UNDERLINE = '\u2581'.ToString();
 
-        private string VocabFilePath { get; set; }
+        private readonly byte[] _vocabFile;
 
         private bool AddBosToken => Config.AddBosToken.Value;
         private bool AddEosToken => Config.AddEosToken.Value;
         private bool AddPrefixSpace => Config.AddPrefixSpace.Value;
         private bool Legacy => Config.Legacy.Value;
 
-        private SentencePieceBpe _spModel;
+        private SentencePieceProcessor _spModel;
 
-        private int UnkTokenLength { get { return _spModel.Encode(UnkToken.Content, out string _).Count; } }
+        private int UnkTokenLength => _spModel.Encode(UnkToken.Content).Length;
 
-        public LlamaTokenizer(string vocabFilePath, TokenizerConfig config = null) : base(config) {
+        /// <param name="vocabFilePath">The path of the sentencepiece model (<c>tokenizer.model</c>).</param>
+        public LlamaTokenizer(string vocabFilePath, TokenizerConfig config = null) : this(File.ReadAllBytes(vocabFilePath), config) { }
+
+        /// <param name="vocabFile">The contents of the sentencepiece model (<c>tokenizer.model</c>).</param>
+        public LlamaTokenizer(byte[] vocabFile, TokenizerConfig config = null) : base(config) {
             Config.UnkToken ??= new AddedToken("<unk>");
             Config.BosToken ??= new AddedToken("<s>");
             Config.EosToken ??= new AddedToken("</s>");
@@ -37,7 +41,7 @@ namespace Doji.AI.Transformers {
                 );
             }
             Config.Legacy ??= true;
-            VocabFilePath = vocabFilePath;
+            _vocabFile = vocabFile;
             Config.AddBosToken ??= true;
             Config.AddEosToken ??= false;
             _spModel = GetSpmProcessor();
@@ -47,20 +51,17 @@ namespace Doji.AI.Transformers {
         }
 
         // Copied from transformers.models.t5.tokenization_t5.T5Tokenizer.get_spm_processor
-        private SentencePieceBpe GetSpmProcessor() {
-            if (Legacy) {
-                using FileStream f = new FileStream(VocabFilePath, FileMode.Open, FileAccess.Read);
-                return Tokenizer.CreateLlama(f, AddBosToken, AddEosToken) as SentencePieceBpe;
+        private SentencePieceProcessor GetSpmProcessor() {
+            var proto = ModelProto.Parse(_vocabFile);
+            if (!Legacy) {
+                proto.NormalizerSpec.AddDummyPrefix = false;
             }
-            
-            var tokenizer = Sentencepiece.SentencepieceUtils.LoadModifiedProto(VocabFilePath, AddBosToken, AddEosToken, addDummyPrefix: false);
-            Debug.Assert(tokenizer.AddDummyPrefix == false);
-            return tokenizer;
+            return new SentencePieceProcessor(proto);
         }
 
         protected override int VocabSize {
             get {
-                return _spModel.Vocab.Count;
+                return _spModel.VocabSize;
             }
         }
 
@@ -101,40 +102,36 @@ namespace Doji.AI.Transformers {
         /// Returns a tokenized string.
         /// </summary>
         protected override List<string> _Tokenize(string text) {
-            var tokens = _spModel.Encode(text, out string normalized);
+            string[] tokens = _spModel.EncodeAsPieces(text);
             if (Legacy || !text.StartsWith(SPIECE_UNDERLINE) && !text.StartsWith(" ")) {
-                return ToStringList(tokens);
+                return tokens.ToList();
             }
-            tokens = _spModel.Encode(UnkToken + text, out string normalized2);
-            if (tokens.Count >= UnkTokenLength) {
-                return ToStringList(tokens.Skip(UnkTokenLength));
-            } else {
-                return ToStringList(tokens);
-            }
-        }
-
-        private static List<string> ToStringList(IEnumerable<Microsoft.ML.Tokenizers.Token> tokens) {
-            List<string> result = new List<string>();
-            foreach (var token in tokens) {
-                result.Add(token.Value);
-            }
-            return result;
+            // 1. Encode string + prefix ex: "<unk> Hey"
+            tokens = _spModel.EncodeAsPieces(UnkToken.Content + text);
+            // 2. Remove the unk token pieces from ['<', 'unk', '>', '▁Hey']
+            int unkTokenLength = UnkTokenLength;
+            return tokens.Length >= unkTokenLength ? tokens.Skip(unkTokenLength).ToList() : tokens.ToList();
         }
 
         protected override int ConvertTokenToId(string token) {
-            return _spModel.MapTokenToId(token).Value;
+            return _spModel.PieceToId(token);
         }
 
         protected override string ConvertIdToToken(int index) {
-            return _spModel.MapIdToToken(index);
+            return _spModel.IdToPiece(index);
         }
 
         protected override string ConvertTokensToString(List<string> tokens) {
-            // transformers strips the prefix space from the first piece; this port decodes ids, so it strips the space
-            // from the text instead (the stripped piece may not be in the vocabulary).
-            bool stripPrefixSpace = tokens.Count > 0 && tokens[0].StartsWith(SPIECE_UNDERLINE) && AddPrefixSpace;
+            if (tokens.Count == 0) {
+                return "";
+            }
+            tokens = new List<string>(tokens);
+            // since we manually add the prefix space, we have to remove it when decoding
+            if (tokens[0].StartsWith(SPIECE_UNDERLINE) && AddPrefixSpace) {
+                tokens[0] = tokens[0][1..];
+            }
 
-            List<int> currentSubTokens = new List<int>();
+            List<string> currentSubTokens = new List<string>();
             string outString = "";
             bool prevIsSpecial = false;
 
@@ -146,22 +143,19 @@ namespace Doji.AI.Transformers {
                     if (!prevIsSpecial && i != 0 && Legacy) {
                         outString += " ";
                     }
-                    outString += _spModel.Decode(currentSubTokens) + token;
+                    outString += _spModel.DecodePieces(currentSubTokens) + token;
                     prevIsSpecial = true;
                     currentSubTokens.Clear();
                 } else {
                     if (prevIsSpecial && i == 1 && AddPrefixSpace && !token.StartsWith(SPIECE_UNDERLINE)) {
                         outString += " ";
                     }
-                    currentSubTokens.Add(_spModel.MapTokenToId(token) ?? 0);
+                    currentSubTokens.Add(token);
                     prevIsSpecial = false;
                 }
             }
 
-            outString += _spModel.Decode(currentSubTokens);
-            if (stripPrefixSpace && outString.StartsWith(" ")) {
-                outString = outString[1..];
-            }
+            outString += _spModel.DecodePieces(currentSubTokens);
             return outString;
         }
 

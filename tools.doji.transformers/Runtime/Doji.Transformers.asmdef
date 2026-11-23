@@ -3,7 +3,7 @@
     "rootNamespace": "",
     "references": [
         "GUID:63a57c8b658089e49a173b0f0c4870a7",
-        "GUID:a6383e49882b5c445bf832fb8f773642",
+        "GUID:7f300de0cd0d4e038d90fc2acd91dd2f",
         "GUID:d3968dc2a3e14bc4a77f0a5b4af632c2",
         "GUID:33634f0321224cbab008d083a50cd823"
     ],
@@ -12,7 +12,6 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "Microsoft.ML.Tokenizers.dll",
         "Newtonsoft.Json.dll"
     ],
     "autoReferenced": true,

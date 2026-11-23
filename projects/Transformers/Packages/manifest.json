@@ -4,7 +4,7 @@
     "tools.doji.formats.onnx": "file:../../../../tools.doji.formats.onnx/tools.doji.formats.onnx",
     "tools.doji.model-hub": "file:../../../../tools.doji.model-hub/tools.doji.model-hub",
     "tools.doji.onnx-model-loader": "file:../../../../tools.doji.onnx-model-loader/tools.doji.onnx-model-loader",
-    "tools.doji.sentencepiece": "file:../../../../tools.doji.sentencepiece/tools.doji.sentencepiece",
+    "tools.doji.tokenizers": "file:../../../../tools.doji.tokenizers/tools.doji.tokenizers",
     "tools.doji.sentis-utils": "file:../../../../tools.doji.sentis-utils/tools.doji.sentis-utils",
     "tools.doji.transformers": "file:../../../tools.doji.transformers",
     "com.unity.ide.visualstudio": "2.0.27",

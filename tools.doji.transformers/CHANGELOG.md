@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Models and tokenizers are delivered by AI Model Hub (`tools.doji.model-hub`). List the models in the project's AI Model Hub manifest.
 - Depends on `com.unity.ai.inference` 2.6.1 and Unity 6000.3.
 - `GPT2Tokenizer` no longer adds CLIP's end-of-word suffix and reads all merges.
+- `LlamaTokenizer` uses the C# sentencepiece port of `tools.doji.tokenizers` instead of `tools.doji.sentencepiece` and its DLLs. It now gives the same ids as sentencepiece for runs of one character, and also takes the model as bytes.
 
 ### Removed
 

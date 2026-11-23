@@ -162,18 +162,20 @@
         "com.unity.ai.inference": "2.6.1"
       }
     },
-    "tools.doji.sentencepiece": {
-      "version": "file:../../../../tools.doji.sentencepiece/tools.doji.sentencepiece",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {}
-    },
     "tools.doji.sentis-utils": {
       "version": "file:../../../../tools.doji.sentis-utils/tools.doji.sentis-utils",
       "depth": 0,
       "source": "local",
       "dependencies": {
         "com.unity.ai.inference": "2.5.0"
+      }
+    },
+    "tools.doji.tokenizers": {
+      "version": "file:../../../../tools.doji.tokenizers/tools.doji.tokenizers",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.2"
       }
     },
     "tools.doji.transformers": {
@@ -185,8 +187,8 @@
         "com.unity.nuget.newtonsoft-json": "3.2.2",
         "tools.doji.model-hub": "1.0.0",
         "tools.doji.downloads": "1.0.0",
-        "tools.doji.sentencepiece": "0.1.1",
-        "tools.doji.sentis-utils": "0.1.1"
+        "tools.doji.sentis-utils": "0.1.1",
+        "tools.doji.tokenizers": "1.0.0"
       }
     },
     "com.unity.modules.ai": {

@@ -65,7 +65,7 @@ LLMs
 
 ### Dependencies
 - [AI Model Hub] (`tools.doji.model-hub`)
-- [tools.doji.sentencepiece]
+- [Tokenizers] (`tools.doji.tokenizers`)
 
 [OpenUPM]: https://openupm.com/packages/tools.doji.transformers
 [Documentation (coming soon)]: https://github.com/julienkay/tools.doji.transformers
@@ -73,4 +73,4 @@ LLMs
 [transformers]: https://github.com/huggingface/transformers
 [tools.doji.diffusers]: https://github.com/julienkay/tools.doji.diffusers
 [AI Model Hub]: https://docs.doji-tech.com/tools.doji.model-hub
-[tools.doji.sentencepiece]: https://github.com/julienkay/tools.doji.sentencepiece
+[Tokenizers]: https://github.com/julienkay/tools.doji.tokenizers

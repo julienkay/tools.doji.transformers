@@ -60,20 +60,9 @@ namespace Doji.AI.Transformers.Editor.Tests {
             }
         }
 
-        /// <summary>Known differences, with the reason.</summary>
-        private static readonly Dictionary<(string, string), string> KnownIssues = new() {
-            [("phi3", new string('a', 64))] = SentencepieceTies,
-            [("phi3", new string('!', 20))] = SentencepieceTies,
-        };
-
-        private const string SentencepieceTies = "Microsoft.ML.Tokenizers merges runs of one character in another order than sentencepiece.";
-
         [TestCaseSource(nameof(Cases))]
         public void Encode_MatchesTransformers(string name, int index) {
             JToken c = References[name]["cases"][index];
-            if (KnownIssues.TryGetValue((name, (string)c["text"]), out string issue)) {
-                Assert.Ignore(issue);
-            }
             int[] ids = Tokenizer(name).Encode((string)c["text"]).InputIds.ToArray();
             Assert.That(ids, Is.EqualTo(c["ids"].ToObject<int[]>()));
         }

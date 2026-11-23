@@ -9,8 +9,8 @@
     "com.unity.nuget.newtonsoft-json": "3.2.2",
     "tools.doji.model-hub": "1.0.0",
     "tools.doji.downloads": "1.0.0",
-    "tools.doji.sentencepiece": "0.1.1",
-    "tools.doji.sentis-utils": "0.1.1"
+    "tools.doji.sentis-utils": "0.1.1",
+    "tools.doji.tokenizers": "1.0.0"
   },
   "author": {
     "name": "Doji Technologies",

@@ -40,8 +40,7 @@ namespace Doji.AI.Transformers {
                 return new ClipTokenizer(vocab, await files.ReadTextAsync(Path("merges.txt")), config);
             }
             if (tokenizerClass.StartsWith("LlamaTokenizer") && files.Has(Path("tokenizer.model"))) {
-                byte[] model = await files.ReadFileAsync(Path("tokenizer.model"));
-                return new LlamaTokenizer(WriteTemporaryFile(files.ModelId, model), config);
+                return new LlamaTokenizer(await files.ReadFileAsync(Path("tokenizer.model")), config);
             }
             if (files.Has(Path("tokenizer.json"))) {
                 return new PreTrainedTokenizerFast(await files.ReadTextAsync(Path("tokenizer.json")), config);
@@ -51,17 +50,6 @@ namespace Doji.AI.Transformers {
                 return new GPT2Tokenizer(vocab, await files.ReadTextAsync(Path("merges.txt")), config);
             }
             throw new NotSupportedException($"The tokenizer '{tokenizerClass}' of '{files.ModelId}' is not supported.");
-        }
-
-        /// <summary>
-        /// The sentencepiece library reads its model from a file.
-        /// </summary>
-        private static string WriteTemporaryFile(string modelId, byte[] data) {
-            string folder = System.IO.Path.Combine(Application.temporaryCachePath, modelId);
-            Directory.CreateDirectory(folder);
-            string path = System.IO.Path.Combine(folder, "tokenizer.model");
-            File.WriteAllBytes(path, data);
-            return path;
         }
     }
 }
