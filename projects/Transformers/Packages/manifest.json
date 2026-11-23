@@ -1,5 +1,9 @@
 {
   "dependencies": {
+    "tools.doji.downloads": "file:../../../../tools.doji.downloads/tools.doji.downloads",
+    "tools.doji.formats.onnx": "file:../../../../tools.doji.formats.onnx/tools.doji.formats.onnx",
+    "tools.doji.model-hub": "file:../../../../tools.doji.model-hub/tools.doji.model-hub",
+    "tools.doji.onnx-model-loader": "file:../../../../tools.doji.onnx-model-loader/tools.doji.onnx-model-loader",
     "tools.doji.sentencepiece": "file:../../../../tools.doji.sentencepiece/tools.doji.sentencepiece",
     "tools.doji.sentis-utils": "file:../../../../tools.doji.sentis-utils/tools.doji.sentis-utils",
     "tools.doji.transformers": "file:../../../tools.doji.transformers",
@@ -27,7 +31,8 @@
     "com.unity.modules.unitywebrequestwww": "1.0.0",
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
-    "com.unity.modules.xr": "1.0.0"
+    "com.unity.modules.xr": "1.0.0",
+    "com.unity.pipeline": "1.0.0"
   },
   "testables": [
     "tools.doji.transformers"
