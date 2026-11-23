@@ -22,7 +22,7 @@ RESOURCES = os.path.normpath(os.path.join(HERE, "..", "..", "tools.doji.transfor
 
 # name: repo, revision, use_fast (False compares with the slow tokenizer the Unity class ports).
 TOKENIZERS = {
-    "smollm2": ("julienkay/tiny-random-LlamaForCausalLM-onnx", "d2dc92c8cfdefb40d8654db50409278551cc0591", True),
+    "smollm2": ("julienkay/tiny-random-LlamaForCausalLM-onnx", "1675db936b735d669df5a25bb238179b110486e2", True),
     "gpt2": ("openai-community/gpt2", "607a30d783dfa663caf39e06633721c8d4cfcd7e", True),
     "gpt2_slow": ("openai-community/gpt2", "607a30d783dfa663caf39e06633721c8d4cfcd7e", False),
     "qwen2_5": ("Qwen/Qwen2.5-0.5B-Instruct", "7ae557604adf67be50417f59c2c2f167def9a775", True),

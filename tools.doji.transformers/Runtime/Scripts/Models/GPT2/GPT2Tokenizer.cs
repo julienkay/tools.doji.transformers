@@ -58,6 +58,8 @@ namespace Doji.AI.Transformers {
             base.Initialize();
         }
 
+        protected override int VocabSize => Vocab.Encoder.Count;
+
         protected override Dictionary<string, int> GetVocab() {
             return Vocab.Encoder;
         }

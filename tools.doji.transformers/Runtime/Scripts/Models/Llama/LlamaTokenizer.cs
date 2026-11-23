@@ -130,9 +130,9 @@ namespace Doji.AI.Transformers {
         }
 
         protected override string ConvertTokensToString(List<string> tokens) {
-            if (tokens[0].StartsWith(SPIECE_UNDERLINE) && AddPrefixSpace) {
-                tokens[0] = tokens[0][1..];
-            }
+            // transformers strips the prefix space from the first piece; this port decodes ids, so it strips the space
+            // from the text instead (the stripped piece may not be in the vocabulary).
+            bool stripPrefixSpace = tokens.Count > 0 && tokens[0].StartsWith(SPIECE_UNDERLINE) && AddPrefixSpace;
 
             List<int> currentSubTokens = new List<int>();
             string outString = "";
@@ -159,6 +159,9 @@ namespace Doji.AI.Transformers {
             }
 
             outString += _spModel.Decode(currentSubTokens);
+            if (stripPrefixSpace && outString.StartsWith(" ")) {
+                outString = outString[1..];
+            }
             return outString;
         }
 

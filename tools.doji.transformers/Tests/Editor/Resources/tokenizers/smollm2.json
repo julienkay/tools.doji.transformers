@@ -1,6 +1,6 @@
 {
  "source": "julienkay/tiny-random-LlamaForCausalLM-onnx",
- "revision": "d2dc92c8cfdefb40d8654db50409278551cc0591",
+ "revision": "1675db936b735d669df5a25bb238179b110486e2",
  "repo": "julienkay/tiny-random-LlamaForCausalLM-onnx",
  "subfolder": "",
  "class": "GPT2TokenizerFast",

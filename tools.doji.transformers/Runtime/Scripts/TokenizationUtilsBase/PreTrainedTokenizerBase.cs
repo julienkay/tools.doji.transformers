@@ -92,7 +92,8 @@ namespace Doji.AI.Transformers {
             Config.PaddingSide ??= Side.Right;
             Config.TruncationSide ??= Side.Right;
             Config.ModelInputNames ??= new List<string>() { "input_ids", "token_type_ids", "attention_mask" };
-            Config.CleanUpTokenizationSpaces ??= true;
+            // The default of transformers since v4.45.
+            Config.CleanUpTokenizationSpaces ??= false;
             Config.SplitSpecialTokens ??= false;
         }
 

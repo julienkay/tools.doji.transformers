@@ -44,7 +44,8 @@ namespace Doji.AI.Transformers {
             var text = new StringBuilder();
             if (template != null && template.Contains("<|im_start|>")) {
                 if (list.Count > 0 && list[0].Role != "system") {
-                    Match system = Regex.Match(template, @"'<\|im_start\|>system\n(.*?)<\|im_end\|>\n'", RegexOptions.Singleline);
+                    // The line breaks are real ones, or "\n" escapes in the template's string literal (Qwen2.5).
+                    Match system = Regex.Match(template, @"'<\|im_start\|>system(?:\n|\\n)([^']*?)<\|im_end\|>(?:\n|\\n)'", RegexOptions.Singleline);
                     if (system.Success) {
                         text.Append($"<|im_start|>system\n{system.Groups[1].Value}<|im_end|>\n");
                     }

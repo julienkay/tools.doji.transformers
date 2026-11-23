@@ -1,4 +1,4 @@
-﻿using static Doji.AI.Transformers.TokenizationUtils;
+using static Doji.AI.Transformers.TokenizationUtils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,8 +19,6 @@ namespace Doji.AI.Transformers {
         }
         private Vocab Vocab { get; set; }
 
-        private BasicTokenizer _nlp;
-        private object _fixText;
         private Dictionary<int, char> _byteEncoder;
         private Dictionary<char, int> _byteDecoder;
         private Dictionary<Tuple<string, string>, int> _bpeRanks;
@@ -36,9 +34,6 @@ namespace Doji.AI.Transformers {
             Config.EosToken ??= new AddedToken("<|endoftext|>");
             Config.PadToken ??= new AddedToken("<|endoftext|>");
 
-            // TODO: BasicTokenizer only a fallback, implement ftfy.fix_text instead?
-            _nlp = new BasicTokenizer();
-            _fixText = null;
             Vocab = vocab;
             _byteEncoder = BytesToUnicode();
             _byteDecoder = _byteEncoder.ToDictionary(x => x.Value, x => x.Key);
@@ -219,12 +214,7 @@ namespace Doji.AI.Transformers {
         /// </summary>
         protected override List<string> _Tokenize(string text) {
             List<string> bpeTokens = new List<string>();
-            if (_fixText == null) {
-                text = string.Join(" ", _nlp.Tokenize(text));
-            } else {
-                //text = Regex.Replace(_fixText(text).ToLower(), @"\s+", " ").Trim();
-                throw new NotImplementedException();
-            }
+            text = Regex.Replace(FixText.Fix(text).ToLowerInvariant(), @"\s+", " ").Trim();
 
             foreach (var match in _pat.Matches(text)) {
                 // Maps all our bytes to unicode strings, avoiding control tokens of the BPE (spaces in our case)

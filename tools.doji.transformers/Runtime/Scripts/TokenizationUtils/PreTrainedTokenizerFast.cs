@@ -41,7 +41,8 @@ namespace Doji.AI.Transformers {
         public PreTrainedTokenizerFast(string tokenizerJson, TokenizerConfig config) : base(config) {
             JObject tokenizer = JObject.Parse(tokenizerJson);
             JObject model = (JObject)tokenizer["model"];
-            if ((string)model["type"] != "BPE") {
+            // Older tokenizer.json files, such as GPT-2's, have no model type.
+            if (((string)model["type"] ?? "BPE") != "BPE") {
                 throw new NotSupportedException($"Expected a BPE tokenizer, got '{model["type"]}'.");
             }
             if ((bool?)model["byte_fallback"] ?? false) {
