@@ -1,8 +1,8 @@
 {
   "name": "tools.doji.transformers",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "displayName": "Transformers",
-  "description": "State-of-the-art transformer models to perform tasks on different modalities such as text, vision, and audio with Unity Sentis",
+  "description": "State-of-the-art transformer models to perform tasks on different modalities such as text, vision, and audio with Unity Inference Engine",
   "unity": "6000.3",
   "dependencies": {
     "com.unity.ai.inference": "2.6.1",
@@ -20,9 +20,9 @@
   "documentationUrl": "https://docs.doji-tech.com/tools.doji.transformers/",
   "samples": [
     {
-      "displayName": "Phi-3 Mini Sample",
-      "description": "Basic example on generating text with a Phi-3 Mini-4K-Instruct model.",
-      "path": "Samples~/01-Phi3ForCausalLMSample"
+      "displayName": "Text Generation Sample",
+      "description": "A simple chat with SmolLM2-135M-Instruct. List julienkay/SmolLM2-135M-Instruct-onnx in the project's AI Model Hub manifest first.",
+      "path": "Samples~/01-TextGenerationSample"
     }
   ]
 }
