@@ -37,8 +37,9 @@ namespace Doji.AI.Transformers {
                 .Trim()
                 .Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
 
+            // Skip the "#version" header line and empty lines.
             List<Tuple<string, string>> bpeMerges = m
-                .Skip(1).Take(m.Length - 2) // m[1:-1] 
+                .Skip(1).Where(line => line.Length > 0)
                 .Select(line => line.Split())
                 .Select(parts => Tuple.Create(parts[0], parts[1]))
                 .ToList();
@@ -115,11 +116,10 @@ namespace Doji.AI.Transformers {
             if (_cache.ContainsKey(token)) {
                 return _cache[token];
             }
-            List<string> word = token.Take(token.Length - 1).Select(c => c.ToString()).ToList();
-            word.Add(token.Last() + "</w>");
+            List<string> word = token.Select(c => c.ToString()).ToList();
             var pairs = GetPairs(word);
             if (pairs.Count == 0) {
-                return token + "</w>";
+                return token;
             }
 
             while (true) {

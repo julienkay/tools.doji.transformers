@@ -1,37 +1,12 @@
 {
   "dependencies": {
-    "tools.doji.sentencepiece": {
-      "version": "file:../../../../tools.doji.sentencepiece/tools.doji.sentencepiece",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {}
-    },
-    "tools.doji.sentis-utils": {
-      "version": "file:../../../../tools.doji.sentis-utils/tools.doji.sentis-utils",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.unity.ai.inference": "2.5.0"
-      }
-    },
-    "tools.doji.transformers": {
-      "version": "file:../../../tools.doji.transformers",
-      "depth": 0,
-      "source": "local",
-      "dependencies": {
-        "com.unity.ai.inference": "2.5.0",
-        "com.unity.nuget.newtonsoft-json": "3.2.1",
-        "tools.doji.sentencepiece": "0.1.1",
-        "tools.doji.sentis-utils": "0.1.1"
-      }
-    },
     "com.unity.ai.inference": {
-      "version": "2.5.0",
+      "version": "2.6.1",
       "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.burst": "1.8.17",
-        "com.unity.dt.app-ui": "1.3.3",
+        "com.unity.dt.app-ui": "1.3.6",
         "com.unity.collections": "2.4.3",
         "com.unity.nuget.newtonsoft-json": "3.2.1",
         "com.unity.modules.imageconversion": "1.0.0"
@@ -97,7 +72,7 @@
     },
     "com.unity.nuget.mono-cecil": {
       "version": "1.11.6",
-      "depth": 3,
+      "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
@@ -107,6 +82,20 @@
       "depth": 1,
       "source": "registry",
       "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.pipeline": {
+      "version": "1.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.test-framework": "1.1.33",
+        "com.unity.nuget.mono-cecil": "1.11.6",
+        "com.unity.modules.uielements": "1.0.0",
+        "com.unity.modules.jsonserialize": "1.0.0",
+        "com.unity.modules.screencapture": "1.0.0",
+        "com.unity.nuget.newtonsoft-json": "3.0.2"
+      },
       "url": "https://packages.unity.com"
     },
     "com.unity.test-framework": {
@@ -136,6 +125,68 @@
       "dependencies": {
         "com.unity.modules.ui": "1.0.0",
         "com.unity.modules.imgui": "1.0.0"
+      }
+    },
+    "tools.doji.downloads": {
+      "version": "file:../../../../tools.doji.downloads/tools.doji.downloads",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.unity.nuget.newtonsoft-json": "3.2.2"
+      }
+    },
+    "tools.doji.formats.onnx": {
+      "version": "file:../../../../tools.doji.formats.onnx/tools.doji.formats.onnx",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
+    "tools.doji.model-hub": {
+      "version": "file:../../../../tools.doji.model-hub/tools.doji.model-hub",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "tools.doji.downloads": "1.0.0",
+        "tools.doji.formats.onnx": "1.0.0",
+        "com.unity.ai.inference": "2.6.1",
+        "tools.doji.sentis-utils": "0.1.1",
+        "com.unity.nuget.newtonsoft-json": "3.2.2"
+      }
+    },
+    "tools.doji.onnx-model-loader": {
+      "version": "file:../../../../tools.doji.onnx-model-loader/tools.doji.onnx-model-loader",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "tools.doji.formats.onnx": "1.0.0",
+        "com.unity.ai.inference": "2.6.1"
+      }
+    },
+    "tools.doji.sentencepiece": {
+      "version": "file:../../../../tools.doji.sentencepiece/tools.doji.sentencepiece",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {}
+    },
+    "tools.doji.sentis-utils": {
+      "version": "file:../../../../tools.doji.sentis-utils/tools.doji.sentis-utils",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.unity.ai.inference": "2.5.0"
+      }
+    },
+    "tools.doji.transformers": {
+      "version": "file:../../../tools.doji.transformers",
+      "depth": 0,
+      "source": "local",
+      "dependencies": {
+        "com.unity.ai.inference": "2.6.1",
+        "com.unity.nuget.newtonsoft-json": "3.2.2",
+        "tools.doji.model-hub": "1.0.0",
+        "tools.doji.downloads": "1.0.0",
+        "tools.doji.sentencepiece": "0.1.1",
+        "tools.doji.sentis-utils": "0.1.1"
       }
     },
     "com.unity.modules.ai": {

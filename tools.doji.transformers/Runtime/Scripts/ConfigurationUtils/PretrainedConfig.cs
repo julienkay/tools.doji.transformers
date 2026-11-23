@@ -23,6 +23,18 @@ namespace Doji.AI.Transformers {
         [JsonProperty("num_hidden_layers")]
         public int NumHiddenLayers { get; set; }
 
+        /// <summary>
+        /// The number of key and value heads of grouped-query attention. Null means <see cref="NumAttentionHeads"/>.
+        /// </summary>
+        [JsonProperty("num_key_value_heads")]
+        public int? NumKeyValueHeads { get; set; }
+
+        /// <summary>
+        /// The size of one attention head. Null means <see cref="HiddenSize"/> / <see cref="NumAttentionHeads"/>.
+        /// </summary>
+        [JsonProperty("head_dim")]
+        public int? HeadDim { get; set; }
+
 
         [JsonProperty("_name_or_path")]
         public string NameOrPath { get; set; }

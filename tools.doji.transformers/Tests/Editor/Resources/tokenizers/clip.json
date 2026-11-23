@@ -1,0 +1,2081 @@
+{
+ "source": "openai/clip-vit-base-patch32",
+ "revision": "3d74acf9a28c67741b2f4f2ea7635f0aaf6f0268",
+ "repo": "julienkay/tiny-random-LlamaForCausalLM-onnx",
+ "subfolder": "tokenizers/clip/",
+ "class": "CLIPTokenizer",
+ "cases": [
+  {
+   "text": "",
+   "ids": [
+    49406,
+    49407
+   ],
+   "decoded": "<|startoftext|><|endoftext|>",
+   "decoded_skip_special": "",
+   "decoded_each": [
+    "<|startoftext|>",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": " ",
+   "ids": [
+    49406,
+    49407
+   ],
+   "decoded": "<|startoftext|><|endoftext|>",
+   "decoded_skip_special": "",
+   "decoded_each": [
+    "<|startoftext|>",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "   ",
+   "ids": [
+    49406,
+    49407
+   ],
+   "decoded": "<|startoftext|><|endoftext|>",
+   "decoded_skip_special": "",
+   "decoded_each": [
+    "<|startoftext|>",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "\n",
+   "ids": [
+    49406,
+    49407
+   ],
+   "decoded": "<|startoftext|><|endoftext|>",
+   "decoded_skip_special": "",
+   "decoded_each": [
+    "<|startoftext|>",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "\n\n",
+   "ids": [
+    49406,
+    49407
+   ],
+   "decoded": "<|startoftext|><|endoftext|>",
+   "decoded_skip_special": "",
+   "decoded_each": [
+    "<|startoftext|>",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "\t",
+   "ids": [
+    49406,
+    49407
+   ],
+   "decoded": "<|startoftext|><|endoftext|>",
+   "decoded_skip_special": "",
+   "decoded_each": [
+    "<|startoftext|>",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "\r\n",
+   "ids": [
+    49406,
+    49407
+   ],
+   "decoded": "<|startoftext|><|endoftext|>",
+   "decoded_skip_special": "",
+   "decoded_each": [
+    "<|startoftext|>",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": " \n ",
+   "ids": [
+    49406,
+    49407
+   ],
+   "decoded": "<|startoftext|><|endoftext|>",
+   "decoded_skip_special": "",
+   "decoded_each": [
+    "<|startoftext|>",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "a",
+   "ids": [
+    49406,
+    320,
+    49407
+   ],
+   "decoded": "<|startoftext|>a <|endoftext|>",
+   "decoded_skip_special": "a",
+   "decoded_each": [
+    "<|startoftext|>",
+    "a",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": " a",
+   "ids": [
+    49406,
+    320,
+    49407
+   ],
+   "decoded": "<|startoftext|>a <|endoftext|>",
+   "decoded_skip_special": "a",
+   "decoded_each": [
+    "<|startoftext|>",
+    "a",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "a ",
+   "ids": [
+    49406,
+    320,
+    49407
+   ],
+   "decoded": "<|startoftext|>a <|endoftext|>",
+   "decoded_skip_special": "a",
+   "decoded_each": [
+    "<|startoftext|>",
+    "a",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "  a  b   c  ",
+   "ids": [
+    49406,
+    320,
+    321,
+    322,
+    49407
+   ],
+   "decoded": "<|startoftext|>a b c <|endoftext|>",
+   "decoded_skip_special": "a b c",
+   "decoded_each": [
+    "<|startoftext|>",
+    "a",
+    "b",
+    "c",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "line1\nline2\n\nline3",
+   "ids": [
+    49406,
+    1148,
+    272,
+    1148,
+    273,
+    1148,
+    274,
+    49407
+   ],
+   "decoded": "<|startoftext|>line 1 line 2 line 3 <|endoftext|>",
+   "decoded_skip_special": "line 1 line 2 line 3",
+   "decoded_each": [
+    "<|startoftext|>",
+    "line",
+    "1",
+    "line",
+    "2",
+    "line",
+    "3",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "   \n\n  indented",
+   "ids": [
+    49406,
+    512,
+    21923,
+    49407
+   ],
+   "decoded": "<|startoftext|>indented <|endoftext|>",
+   "decoded_skip_special": "indented",
+   "decoded_each": [
+    "<|startoftext|>",
+    "in",
+    "dented",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "trailing spaces   ",
+   "ids": [
+    49406,
+    37427,
+    9006,
+    49407
+   ],
+   "decoded": "<|startoftext|>trailing spaces <|endoftext|>",
+   "decoded_skip_special": "trailing spaces",
+   "decoded_each": [
+    "<|startoftext|>",
+    "trailing",
+    "spaces",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "tab\tseparated\tvalues",
+   "ids": [
+    49406,
+    14724,
+    22163,
+    8857,
+    49407
+   ],
+   "decoded": "<|startoftext|>tab separated values <|endoftext|>",
+   "decoded_skip_special": "tab separated values",
+   "decoded_each": [
+    "<|startoftext|>",
+    "tab",
+    "separated",
+    "values",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "Hello world!",
+   "ids": [
+    49406,
+    3306,
+    1002,
+    256,
+    49407
+   ],
+   "decoded": "<|startoftext|>hello world ! <|endoftext|>",
+   "decoded_skip_special": "hello world !",
+   "decoded_each": [
+    "<|startoftext|>",
+    "hello",
+    "world",
+    "!",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "Hello  world",
+   "ids": [
+    49406,
+    3306,
+    1002,
+    49407
+   ],
+   "decoded": "<|startoftext|>hello world <|endoftext|>",
+   "decoded_skip_special": "hello world",
+   "decoded_each": [
+    "<|startoftext|>",
+    "hello",
+    "world",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "HeLLo WoRLD",
+   "ids": [
+    49406,
+    3306,
+    1002,
+    49407
+   ],
+   "decoded": "<|startoftext|>hello world <|endoftext|>",
+   "decoded_skip_special": "hello world",
+   "decoded_each": [
+    "<|startoftext|>",
+    "hello",
+    "world",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "ALLCAPS TEXT",
+   "ids": [
+    49406,
+    813,
+    23185,
+    4160,
+    49407
+   ],
+   "decoded": "<|startoftext|>allcaps text <|endoftext|>",
+   "decoded_skip_special": "allcaps text",
+   "decoded_each": [
+    "<|startoftext|>",
+    "all",
+    "caps",
+    "text",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "The quick brown fox jumps over the lazy dog.",
+   "ids": [
+    49406,
+    518,
+    3712,
+    2866,
+    3240,
+    18911,
+    962,
+    518,
+    10753,
+    1929,
+    269,
+    49407
+   ],
+   "decoded": "<|startoftext|>the quick brown fox jumps over the lazy dog . <|endoftext|>",
+   "decoded_skip_special": "the quick brown fox jumps over the lazy dog .",
+   "decoded_each": [
+    "<|startoftext|>",
+    "the",
+    "quick",
+    "brown",
+    "fox",
+    "jumps",
+    "over",
+    "the",
+    "lazy",
+    "dog",
+    ".",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "supercalifragilisticexpialidocioussupercalifragilisticexpialidocioussupercalifragilisticexpialidocious",
+   "ids": [
+    49406,
+    1642,
+    2857,
+    13093,
+    2076,
+    5868,
+    26850,
+    835,
+    639,
+    698,
+    1987,
+    1642,
+    2857,
+    13093,
+    2076,
+    5868,
+    26850,
+    835,
+    639,
+    698,
+    1987,
+    1642,
+    2857,
+    13093,
+    2076,
+    5868,
+    26850,
+    835,
+    639,
+    38466,
+    49407
+   ],
+   "decoded": "<|startoftext|>supercalifragilisticexpialidocioussupercalifragilisticexpialidocioussupercalifragilisticexpialidocious <|endoftext|>",
+   "decoded_skip_special": "supercalifragilisticexpialidocioussupercalifragilisticexpialidocioussupercalifragilisticexpialidocious",
+   "decoded_each": [
+    "<|startoftext|>",
+    "super",
+    "cali",
+    "frag",
+    "ili",
+    "stic",
+    "expi",
+    "ali",
+    "do",
+    "ci",
+    "ous",
+    "super",
+    "cali",
+    "frag",
+    "ili",
+    "stic",
+    "expi",
+    "ali",
+    "do",
+    "ci",
+    "ous",
+    "super",
+    "cali",
+    "frag",
+    "ili",
+    "stic",
+    "expi",
+    "ali",
+    "do",
+    "cious",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "ids": [
+    49406,
+    23126,
+    23126,
+    23126,
+    23126,
+    23126,
+    23126,
+    23126,
+    6727,
+    19336,
+    49407
+   ],
+   "decoded": "<|startoftext|>aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa <|endoftext|>",
+   "decoded_skip_special": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "decoded_each": [
+    "<|startoftext|>",
+    "aaaaaaaa",
+    "aaaaaaaa",
+    "aaaaaaaa",
+    "aaaaaaaa",
+    "aaaaaaaa",
+    "aaaaaaaa",
+    "aaaaaaaa",
+    "aaaa",
+    "aaaa",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "!!!!!!!!!!!!!!!!!!!!",
+   "ids": [
+    49406,
+    30146,
+    2360,
+    49407
+   ],
+   "decoded": "<|startoftext|>!!!!!!!!!!!!!!!!!!!! <|endoftext|>",
+   "decoded_skip_special": "!!!!!!!!!!!!!!!!!!!!",
+   "decoded_each": [
+    "<|startoftext|>",
+    "!!!!!!!!!!!!!!!!",
+    "!!!!",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "abababababababababababababababababababababababababababababab",
+   "ids": [
+    49406,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    596,
+    3937,
+    49407
+   ],
+   "decoded": "<|startoftext|>abababababababababababababababababababababababababababababab <|endoftext|>",
+   "decoded_skip_special": "abababababababababababababababababababababababababababababab",
+   "decoded_each": [
+    "<|startoftext|>",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "I'm sure you're right, we've seen it, they'll come, he'd go, it's fine.",
+   "ids": [
+    49406,
+    328,
+    880,
+    1650,
+    592,
+    982,
+    1155,
+    267,
+    649,
+    1200,
+    2041,
+    585,
+    267,
+    889,
+    1342,
+    891,
+    267,
+    797,
+    1896,
+    861,
+    267,
+    585,
+    568,
+    3797,
+    269,
+    49407
+   ],
+   "decoded": "<|startoftext|>i 'm sure you 're right , we 've seen it , they 'll come , he 'd go , it 's fine . <|endoftext|>",
+   "decoded_skip_special": "i 'm sure you 're right , we 've seen it , they 'll come , he 'd go , it 's fine .",
+   "decoded_each": [
+    "<|startoftext|>",
+    "i",
+    "'m",
+    "sure",
+    "you",
+    "'re",
+    "right",
+    ",",
+    "we",
+    "'ve",
+    "seen",
+    "it",
+    ",",
+    "they",
+    "'ll",
+    "come",
+    ",",
+    "he",
+    "'d",
+    "go",
+    ",",
+    "it",
+    "'s",
+    "fine",
+    ".",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "I'M DON'T YOU'RE",
+   "ids": [
+    49406,
+    328,
+    880,
+    847,
+    713,
+    592,
+    982,
+    49407
+   ],
+   "decoded": "<|startoftext|>i 'm don 't you 're <|endoftext|>",
+   "decoded_skip_special": "i 'm don 't you 're",
+   "decoded_each": [
+    "<|startoftext|>",
+    "i",
+    "'m",
+    "don",
+    "'t",
+    "you",
+    "'re",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "can't won't shan't y'all",
+   "ids": [
+    49406,
+    753,
+    713,
+    1749,
+    713,
+    8834,
+    713,
+    344,
+    262,
+    615,
+    49407
+   ],
+   "decoded": "<|startoftext|>can 't won 't shan 't y ' all <|endoftext|>",
+   "decoded_skip_special": "can 't won 't shan 't y ' all",
+   "decoded_each": [
+    "<|startoftext|>",
+    "can",
+    "'t",
+    "won",
+    "'t",
+    "shan",
+    "'t",
+    "y",
+    "'",
+    "all",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "'quoted' and \"double quoted\"",
+   "ids": [
+    49406,
+    262,
+    27706,
+    262,
+    537,
+    257,
+    3200,
+    27706,
+    257,
+    49407
+   ],
+   "decoded": "<|startoftext|>' quoted ' and \" double quoted \" <|endoftext|>",
+   "decoded_skip_special": "' quoted ' and \" double quoted \"",
+   "decoded_each": [
+    "<|startoftext|>",
+    "'",
+    "quoted",
+    "'",
+    "and",
+    "\"",
+    "double",
+    "quoted",
+    "\"",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "rock 'n' roll",
+   "ids": [
+    49406,
+    2172,
+    262,
+    333,
+    262,
+    3341,
+    49407
+   ],
+   "decoded": "<|startoftext|>rock ' n ' roll <|endoftext|>",
+   "decoded_skip_special": "rock ' n ' roll",
+   "decoded_each": [
+    "<|startoftext|>",
+    "rock",
+    "'",
+    "n",
+    "'",
+    "roll",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "1234567890",
+   "ids": [
+    49406,
+    272,
+    273,
+    274,
+    275,
+    276,
+    277,
+    278,
+    279,
+    280,
+    271,
+    49407
+   ],
+   "decoded": "<|startoftext|>1 2 3 4 5 6 7 8 9 0 <|endoftext|>",
+   "decoded_skip_special": "1 2 3 4 5 6 7 8 9 0",
+   "decoded_each": [
+    "<|startoftext|>",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "0",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "3.14159",
+   "ids": [
+    49406,
+    274,
+    269,
+    272,
+    275,
+    272,
+    276,
+    280,
+    49407
+   ],
+   "decoded": "<|startoftext|>3 . 1 4 1 5 9 <|endoftext|>",
+   "decoded_skip_special": "3 . 1 4 1 5 9",
+   "decoded_each": [
+    "<|startoftext|>",
+    "3",
+    ".",
+    "1",
+    "4",
+    "1",
+    "5",
+    "9",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "1,000,000",
+   "ids": [
+    49406,
+    272,
+    267,
+    271,
+    271,
+    271,
+    267,
+    271,
+    271,
+    271,
+    49407
+   ],
+   "decoded": "<|startoftext|>1 , 0 0 0 , 0 0 0 <|endoftext|>",
+   "decoded_skip_special": "1 , 0 0 0 , 0 0 0",
+   "decoded_each": [
+    "<|startoftext|>",
+    "1",
+    ",",
+    "0",
+    "0",
+    "0",
+    ",",
+    "0",
+    "0",
+    "0",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "v2.0.1",
+   "ids": [
+    49406,
+    341,
+    273,
+    269,
+    271,
+    269,
+    272,
+    49407
+   ],
+   "decoded": "<|startoftext|>v 2 . 0 . 1 <|endoftext|>",
+   "decoded_skip_special": "v 2 . 0 . 1",
+   "decoded_each": [
+    "<|startoftext|>",
+    "v",
+    "2",
+    ".",
+    "0",
+    ".",
+    "1",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "2024-11-23",
+   "ids": [
+    49406,
+    273,
+    271,
+    273,
+    275,
+    268,
+    272,
+    272,
+    268,
+    273,
+    274,
+    49407
+   ],
+   "decoded": "<|startoftext|>2 0 2 4 - 1 1 - 2 3 <|endoftext|>",
+   "decoded_skip_special": "2 0 2 4 - 1 1 - 2 3",
+   "decoded_each": [
+    "<|startoftext|>",
+    "2",
+    "0",
+    "2",
+    "4",
+    "-",
+    "1",
+    "1",
+    "-",
+    "2",
+    "3",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "x² + y³",
+   "ids": [
+    49406,
+    343,
+    41175,
+    266,
+    344,
+    126,
+    367,
+    49407
+   ],
+   "decoded": "<|startoftext|>x ² + y ³ <|endoftext|>",
+   "decoded_skip_special": "x ² + y ³",
+   "decoded_each": [
+    "<|startoftext|>",
+    "x",
+    "²",
+    "+",
+    "y",
+    "�",
+    "�",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "Ⅻ chapters",
+   "ids": [
+    49406,
+    158,
+    227,
+    375,
+    22936,
+    49407
+   ],
+   "decoded": "<|startoftext|>ⅻ chapters <|endoftext|>",
+   "decoded_skip_special": "ⅻ chapters",
+   "decoded_each": [
+    "<|startoftext|>",
+    "�",
+    "�",
+    "�",
+    "chapters",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "١٢٣ ٤٥٦",
+   "ids": [
+    49406,
+    149,
+    350,
+    149,
+    351,
+    149,
+    352,
+    149,
+    353,
+    149,
+    354,
+    149,
+    355,
+    49407
+   ],
+   "decoded": "<|startoftext|>١ ٢ ٣ ٤ ٥ ٦ <|endoftext|>",
+   "decoded_skip_special": "١ ٢ ٣ ٤ ٥ ٦",
+   "decoded_each": [
+    "<|startoftext|>",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "0x1F 0b1010 1e-5",
+   "ids": [
+    49406,
+    271,
+    343,
+    272,
+    325,
+    271,
+    321,
+    272,
+    271,
+    272,
+    271,
+    272,
+    324,
+    268,
+    276,
+    49407
+   ],
+   "decoded": "<|startoftext|>0 x 1 f 0 b 1 0 1 0 1 e - 5 <|endoftext|>",
+   "decoded_skip_special": "0 x 1 f 0 b 1 0 1 0 1 e - 5",
+   "decoded_each": [
+    "<|startoftext|>",
+    "0",
+    "x",
+    "1",
+    "f",
+    "0",
+    "b",
+    "1",
+    "0",
+    "1",
+    "0",
+    "1",
+    "e",
+    "-",
+    "5",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "The year 2024 had 365 days.",
+   "ids": [
+    49406,
+    518,
+    935,
+    273,
+    271,
+    273,
+    275,
+    1100,
+    274,
+    277,
+    276,
+    1161,
+    269,
+    49407
+   ],
+   "decoded": "<|startoftext|>the year 2 0 2 4 had 3 6 5 days . <|endoftext|>",
+   "decoded_skip_special": "the year 2 0 2 4 had 3 6 5 days .",
+   "decoded_each": [
+    "<|startoftext|>",
+    "the",
+    "year",
+    "2",
+    "0",
+    "2",
+    "4",
+    "had",
+    "3",
+    "6",
+    "5",
+    "days",
+    ".",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "Call 555-0100 at 10:30am.",
+   "ids": [
+    49406,
+    1620,
+    276,
+    276,
+    276,
+    268,
+    271,
+    272,
+    271,
+    271,
+    536,
+    272,
+    271,
+    281,
+    274,
+    271,
+    687,
+    269,
+    49407
+   ],
+   "decoded": "<|startoftext|>call 5 5 5 - 0 1 0 0 at 1 0 : 3 0 am . <|endoftext|>",
+   "decoded_skip_special": "call 5 5 5 - 0 1 0 0 at 1 0 : 3 0 am .",
+   "decoded_each": [
+    "<|startoftext|>",
+    "call",
+    "5",
+    "5",
+    "5",
+    "-",
+    "0",
+    "1",
+    "0",
+    "0",
+    "at",
+    "1",
+    "0",
+    ":",
+    "3",
+    "0",
+    "am",
+    ".",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "Hello, world... !!! ??? --- ***",
+   "ids": [
+    49406,
+    3306,
+    267,
+    1002,
+    678,
+    995,
+    3824,
+    11079,
+    7829,
+    49407
+   ],
+   "decoded": "<|startoftext|>hello , world ... !!! ??? --- *** <|endoftext|>",
+   "decoded_skip_special": "hello , world ... !!! ??? --- ***",
+   "decoded_each": [
+    "<|startoftext|>",
+    "hello",
+    ",",
+    "world",
+    "...",
+    "!!!",
+    "???",
+    "---",
+    "***",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "(a) [b] {c} <d>",
+   "ids": [
+    49406,
+    263,
+    320,
+    264,
+    314,
+    321,
+    316,
+    346,
+    322,
+    348,
+    283,
+    323,
+    285,
+    49407
+   ],
+   "decoded": "<|startoftext|>( a ) [ b ] { c } < d > <|endoftext|>",
+   "decoded_skip_special": "( a ) [ b ] { c } < d >",
+   "decoded_each": [
+    "<|startoftext|>",
+    "(",
+    "a",
+    ")",
+    "[",
+    "b",
+    "]",
+    "{",
+    "c",
+    "}",
+    "<",
+    "d",
+    ">",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "user@example.com",
+   "ids": [
+    49406,
+    7031,
+    287,
+    6228,
+    269,
+    2464,
+    49407
+   ],
+   "decoded": "<|startoftext|>user @ example . com <|endoftext|>",
+   "decoded_skip_special": "user @ example . com",
+   "decoded_each": [
+    "<|startoftext|>",
+    "user",
+    "@",
+    "example",
+    ".",
+    "com",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "https://huggingface.co/docs?x=1&y=2#top",
+   "ids": [
+    49406,
+    30901,
+    12441,
+    845,
+    1129,
+    653,
+    1710,
+    269,
+    1320,
+    270,
+    15157,
+    286,
+    343,
+    284,
+    272,
+    261,
+    344,
+    284,
+    273,
+    258,
+    1253,
+    49407
+   ],
+   "decoded": "<|startoftext|>https :// huggingface . co / docs ? x = 1 & y = 2 # top <|endoftext|>",
+   "decoded_skip_special": "https :// huggingface . co / docs ? x = 1 & y = 2 # top",
+   "decoded_each": [
+    "<|startoftext|>",
+    "https",
+    "://",
+    "hu",
+    "gg",
+    "ing",
+    "face",
+    ".",
+    "co",
+    "/",
+    "docs",
+    "?",
+    "x",
+    "=",
+    "1",
+    "&",
+    "y",
+    "=",
+    "2",
+    "#",
+    "top",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "#hashtag @mention $100 50% a&b",
+   "ids": [
+    49406,
+    258,
+    9238,
+    287,
+    6762,
+    259,
+    272,
+    271,
+    271,
+    276,
+    271,
+    260,
+    320,
+    261,
+    321,
+    49407
+   ],
+   "decoded": "<|startoftext|># hashtag @ mention $ 1 0 0 5 0 % a & b <|endoftext|>",
+   "decoded_skip_special": "# hashtag @ mention $ 1 0 0 5 0 % a & b",
+   "decoded_each": [
+    "<|startoftext|>",
+    "#",
+    "hashtag",
+    "@",
+    "mention",
+    "$",
+    "1",
+    "0",
+    "0",
+    "5",
+    "0",
+    "%",
+    "a",
+    "&",
+    "b",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "\\path\\to\\file C:/Users/name",
+   "ids": [
+    49406,
+    315,
+    5035,
+    315,
+    531,
+    315,
+    4512,
+    322,
+    13604,
+    7433,
+    270,
+    1981,
+    49407
+   ],
+   "decoded": "<|startoftext|>\\ path \\ to \\ file c :/ users / name <|endoftext|>",
+   "decoded_skip_special": "\\ path \\ to \\ file c :/ users / name",
+   "decoded_each": [
+    "<|startoftext|>",
+    "\\",
+    "path",
+    "\\",
+    "to",
+    "\\",
+    "file",
+    "c",
+    ":/",
+    "users",
+    "/",
+    "name",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "~`^|_=+",
+   "ids": [
+    49406,
+    93,
+    63,
+    61,
+    91,
+    62,
+    28,
+    266,
+    49407
+   ],
+   "decoded": "<|startoftext|>~`^|_=+ <|endoftext|>",
+   "decoded_skip_special": "~`^|_=+",
+   "decoded_each": [
+    "<|startoftext|>",
+    "~",
+    "`",
+    "^",
+    "|",
+    "_",
+    "=",
+    "+",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "def f(x):\n    return x**2\n",
+   "ids": [
+    49406,
+    11649,
+    325,
+    263,
+    343,
+    4143,
+    3458,
+    343,
+    4441,
+    273,
+    49407
+   ],
+   "decoded": "<|startoftext|>def f ( x ): return x ** 2 <|endoftext|>",
+   "decoded_skip_special": "def f ( x ): return x ** 2",
+   "decoded_each": [
+    "<|startoftext|>",
+    "def",
+    "f",
+    "(",
+    "x",
+    "):",
+    "return",
+    "x",
+    "**",
+    "2",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "if (a && b) { c++; } else { d--; }",
+   "ids": [
+    49406,
+    878,
+    263,
+    320,
+    27791,
+    321,
+    264,
+    346,
+    322,
+    47298,
+    282,
+    348,
+    3344,
+    346,
+    323,
+    2154,
+    282,
+    348,
+    49407
+   ],
+   "decoded": "<|startoftext|>if ( a && b ) { c ++; } else { d --; } <|endoftext|>",
+   "decoded_skip_special": "if ( a && b ) { c ++; } else { d --; }",
+   "decoded_each": [
+    "<|startoftext|>",
+    "if",
+    "(",
+    "a",
+    "&&",
+    "b",
+    ")",
+    "{",
+    "c",
+    "++",
+    ";",
+    "}",
+    "else",
+    "{",
+    "d",
+    "--",
+    ";",
+    "}",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "<html><body>Hi</body></html>",
+   "ids": [
+    49406,
+    283,
+    18231,
+    28015,
+    1774,
+    285,
+    1883,
+    34308,
+    1774,
+    29,
+    34308,
+    18231,
+    285,
+    49407
+   ],
+   "decoded": "<|startoftext|>< html >< body > hi </ body ></ html > <|endoftext|>",
+   "decoded_skip_special": "< html >< body > hi </ body ></ html >",
+   "decoded_each": [
+    "<|startoftext|>",
+    "<",
+    "html",
+    "><",
+    "body",
+    ">",
+    "hi",
+    "</",
+    "body",
+    ">",
+    "</",
+    "html",
+    ">",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "SELECT * FROM t WHERE id = 1;",
+   "ids": [
+    49406,
+    8690,
+    265,
+    633,
+    339,
+    1234,
+    1014,
+    284,
+    272,
+    282,
+    49407
+   ],
+   "decoded": "<|startoftext|>select * from t where id = 1 ; <|endoftext|>",
+   "decoded_skip_special": "select * from t where id = 1 ;",
+   "decoded_each": [
+    "<|startoftext|>",
+    "select",
+    "*",
+    "from",
+    "t",
+    "where",
+    "id",
+    "=",
+    "1",
+    ";",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "    four spaces\n\ttab\n        eight",
+   "ids": [
+    49406,
+    2721,
+    9006,
+    14724,
+    7910,
+    49407
+   ],
+   "decoded": "<|startoftext|>four spaces tab eight <|endoftext|>",
+   "decoded_skip_special": "four spaces tab eight",
+   "decoded_each": [
+    "<|startoftext|>",
+    "four",
+    "spaces",
+    "tab",
+    "eight",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "Größe, naïve café, Ångström",
+   "ids": [
+    49406,
+    709,
+    7255,
+    127,
+    253,
+    324,
+    267,
+    1097,
+    35689,
+    563,
+    15304,
+    267,
+    23176,
+    10352,
+    807,
+    7255,
+    332,
+    49407
+   ],
+   "decoded": "<|startoftext|>größe , naïve café , ångström <|endoftext|>",
+   "decoded_skip_special": "größe , naïve café , ångström",
+   "decoded_each": [
+    "<|startoftext|>",
+    "gr",
+    "ö",
+    "�",
+    "�",
+    "e",
+    ",",
+    "na",
+    "ï",
+    "ve",
+    "café",
+    ",",
+    "å",
+    "ng",
+    "str",
+    "ö",
+    "m",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "東京は日本の首都です。",
+   "ids": [
+    49406,
+    48338,
+    21078,
+    105,
+    4813,
+    107,
+    39121,
+    44353,
+    21575,
+    165,
+    99,
+    244,
+    165,
+    225,
+    121,
+    4813,
+    100,
+    4813,
+    503,
+    38000,
+    49407
+   ],
+   "decoded": "<|startoftext|>東京は日本の首都です 。 <|endoftext|>",
+   "decoded_skip_special": "東京は日本の首都です 。",
+   "decoded_each": [
+    "<|startoftext|>",
+    "東",
+    "�",
+    "�",
+    "�",
+    "�",
+    "日",
+    "本",
+    "の",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "。",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "한국어 텍스트입니다",
+   "ids": [
+    49406,
+    15197,
+    250,
+    31871,
+    255,
+    31625,
+    368,
+    169,
+    227,
+    235,
+    20305,
+    48974,
+    20849,
+    227,
+    33708,
+    13094,
+    353,
+    49407
+   ],
+   "decoded": "<|startoftext|>한국어 텍스트입니다 <|endoftext|>",
+   "decoded_skip_special": "한국어 텍스트입니다",
+   "decoded_each": [
+    "<|startoftext|>",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "스",
+    "트",
+    "�",
+    "�",
+    "니",
+    "�",
+    "�",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "Привет, мир!",
+   "ids": [
+    49406,
+    26302,
+    16370,
+    29503,
+    110,
+    22176,
+    141,
+    480,
+    267,
+    38018,
+    16701,
+    141,
+    478,
+    256,
+    49407
+   ],
+   "decoded": "<|startoftext|>привет , мир ! <|endoftext|>",
+   "decoded_skip_special": "привет , мир !",
+   "decoded_each": [
+    "<|startoftext|>",
+    "п",
+    "р",
+    "и�",
+    "�",
+    "е",
+    "�",
+    "�",
+    ",",
+    "м",
+    "и",
+    "�",
+    "�",
+    "!",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "مرحبا بالعالم",
+   "ids": [
+    49406,
+    12986,
+    10948,
+    25722,
+    16378,
+    22625,
+    16378,
+    12973,
+    18843,
+    12973,
+    29945,
+    49407
+   ],
+   "decoded": "<|startoftext|>مرحبا بالعالم <|endoftext|>",
+   "decoded_skip_special": "مرحبا بالعالم",
+   "decoded_each": [
+    "<|startoftext|>",
+    "م",
+    "ر",
+    "ح",
+    "ب",
+    "ا",
+    "ب",
+    "ال",
+    "ع",
+    "ال",
+    "م",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "हिन्दी पाठ",
+   "ids": [
+    49406,
+    29446,
+    26721,
+    26090,
+    19389,
+    29552,
+    25751,
+    44149,
+    13343,
+    3124,
+    510,
+    49407
+   ],
+   "decoded": "<|startoftext|>ह ि न ् द ी प ा ठ <|endoftext|>",
+   "decoded_skip_special": "ह ि न ् द ी प ा ठ",
+   "decoded_each": [
+    "<|startoftext|>",
+    "ह",
+    "ि",
+    "न",
+    "्",
+    "द",
+    "ी",
+    "प",
+    "ा",
+    "�",
+    "�",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "Ελληνικά",
+   "ids": [
+    49406,
+    138,
+    113,
+    138,
+    119,
+    138,
+    119,
+    138,
+    115,
+    138,
+    121,
+    138,
+    117,
+    138,
+    118,
+    138,
+    361,
+    49407
+   ],
+   "decoded": "<|startoftext|>ελληνικά <|endoftext|>",
+   "decoded_skip_special": "ελληνικά",
+   "decoded_each": [
+    "<|startoftext|>",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "ไทย",
+   "ids": [
+    49406,
+    31718,
+    245,
+    33091,
+    49407
+   ],
+   "decoded": "<|startoftext|>ไทย <|endoftext|>",
+   "decoded_skip_special": "ไทย",
+   "decoded_each": [
+    "<|startoftext|>",
+    "ไ�",
+    "�",
+    "ย",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "😀😃🎉👍🏽",
+   "ids": [
+    49406,
+    12832,
+    14079,
+    4310,
+    43722,
+    49407
+   ],
+   "decoded": "<|startoftext|>😀😃🎉👍🏽 <|endoftext|>",
+   "decoded_skip_special": "😀😃🎉👍🏽",
+   "decoded_each": [
+    "<|startoftext|>",
+    "😀",
+    "😃",
+    "🎉",
+    "👍🏽",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "👨‍👩‍👧‍👦 family",
+   "ids": [
+    49406,
+    25023,
+    26304,
+    48938,
+    4244,
+    964,
+    355,
+    1315,
+    49407
+   ],
+   "decoded": "<|startoftext|>👨‍👩‍👧‍👦 family <|endoftext|>",
+   "decoded_skip_special": "👨‍👩‍👧‍👦 family",
+   "decoded_each": [
+    "<|startoftext|>",
+    "👨‍",
+    "👩‍",
+    "👧",
+    "‍",
+    "�",
+    "�",
+    "family",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "é vs é",
+   "ids": [
+    49406,
+    4166,
+    1547,
+    4166,
+    49407
+   ],
+   "decoded": "<|startoftext|>é vs é <|endoftext|>",
+   "decoded_skip_special": "é vs é",
+   "decoded_each": [
+    "<|startoftext|>",
+    "é",
+    "vs",
+    "é",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "ﬁ ligature",
+   "ids": [
+    49406,
+    3589,
+    19915,
+    4490,
+    49407
+   ],
+   "decoded": "<|startoftext|>fi ligature <|endoftext|>",
+   "decoded_skip_special": "fi ligature",
+   "decoded_each": [
+    "<|startoftext|>",
+    "fi",
+    "lig",
+    "ature",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "a​b zero width",
+   "ids": [
+    49406,
+    320,
+    9844,
+    321,
+    5848,
+    23571,
+    49407
+   ],
+   "decoded": "<|startoftext|>a ​ b zero width <|endoftext|>",
+   "decoded_skip_special": "a ​ b zero width",
+   "decoded_each": [
+    "<|startoftext|>",
+    "a",
+    "​",
+    "b",
+    "zero",
+    "width",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "a b non-breaking",
+   "ids": [
+    49406,
+    320,
+    321,
+    3353,
+    268,
+    2755,
+    49407
+   ],
+   "decoded": "<|startoftext|>a b non - breaking <|endoftext|>",
+   "decoded_skip_special": "a b non - breaking",
+   "decoded_each": [
+    "<|startoftext|>",
+    "a",
+    "b",
+    "non",
+    "-",
+    "breaking",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "en–dash em—dash",
+   "ids": [
+    49406,
+    576,
+    1224,
+    10206,
+    2270,
+    2005,
+    10206,
+    49407
+   ],
+   "decoded": "<|startoftext|>en – dash em — dash <|endoftext|>",
+   "decoded_skip_special": "en – dash em — dash",
+   "decoded_each": [
+    "<|startoftext|>",
+    "en",
+    "–",
+    "dash",
+    "em",
+    "—",
+    "dash",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "“curly” ‘quotes’",
+   "ids": [
+    49406,
+    257,
+    20795,
+    257,
+    262,
+    5808,
+    262,
+    49407
+   ],
+   "decoded": "<|startoftext|>\" curly \" ' quotes ' <|endoftext|>",
+   "decoded_skip_special": "\" curly \" ' quotes '",
+   "decoded_each": [
+    "<|startoftext|>",
+    "\"",
+    "curly",
+    "\"",
+    "'",
+    "quotes",
+    "'",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "½ ¼ ¾ €",
+   "ids": [
+    49406,
+    33613,
+    126,
+    376,
+    126,
+    378,
+    6309,
+    49407
+   ],
+   "decoded": "<|startoftext|>½ ¼ ¾ € <|endoftext|>",
+   "decoded_skip_special": "½ ¼ ¾ €",
+   "decoded_each": [
+    "<|startoftext|>",
+    "½",
+    "�",
+    "�",
+    "�",
+    "�",
+    "€",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": " line separator",
+   "ids": [
+    49406,
+    1148,
+    6859,
+    1962,
+    49407
+   ],
+   "decoded": "<|startoftext|>line separator <|endoftext|>",
+   "decoded_skip_special": "line separator",
+   "decoded_each": [
+    "<|startoftext|>",
+    "line",
+    "separ",
+    "ator",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "mixed 中文 and English 123",
+   "ids": [
+    49406,
+    6780,
+    19759,
+    255,
+    29032,
+    485,
+    537,
+    3469,
+    272,
+    273,
+    274,
+    49407
+   ],
+   "decoded": "<|startoftext|>mixed 中文 and english 1 2 3 <|endoftext|>",
+   "decoded_skip_special": "mixed 中文 and english 1 2 3",
+   "decoded_each": [
+    "<|startoftext|>",
+    "mixed",
+    "�",
+    "�",
+    "�",
+    "�",
+    "and",
+    "english",
+    "1",
+    "2",
+    "3",
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "<|startoftext|>a photo<|endoftext|>",
+   "ids": [
+    49406,
+    49406,
+    320,
+    1125,
+    49407,
+    49407
+   ],
+   "decoded": "<|startoftext|><|startoftext|>a photo <|endoftext|><|endoftext|>",
+   "decoded_skip_special": "a photo",
+   "decoded_each": [
+    "<|startoftext|>",
+    "<|startoftext|>",
+    "a",
+    "photo",
+    "<|endoftext|>",
+    "<|endoftext|>"
+   ]
+  }
+ ],
+ "chats": []
+}

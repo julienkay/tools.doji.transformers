@@ -1,59 +1,48 @@
-using System;
-using System.Collections.Generic;
 using Unity.InferenceEngine;
 
 namespace Doji.AI.Transformers {
-    
+
+    /// <summary>
+    /// A cache that grows with each token. It owns its tensors, which stay on the model's device.
+    /// </summary>
     public class DynamicCache : Cache {
 
-        public List<Tensor> KeyCache { get; set; }
-        public List<Tensor> ValueCache { get; set; }
+        private readonly Tensor<float>[] _keys;
+        private readonly Tensor<float>[] _values;
 
-        private int _seenTokens;
-
-        public DynamicCache() : base() {
-            KeyCache = new List<Tensor>();
-            ValueCache = new List<Tensor>();
-        }
-
-        public override (Tensor Key, Tensor Value) this[int index] {
-            get {
-                if (index < 0 || index >= Math.Min(KeyCache.Count, ValueCache.Count)) {
-                    throw new IndexOutOfRangeException($"Index ({index} is outside the bounds of the cached values (0-{KeyCache.Count - 1}).");
-                }
-                return (KeyCache[index], ValueCache[index]);
+        /// <summary>
+        /// Creates an empty cache, with zero tokens per layer.
+        /// </summary>
+        public DynamicCache(int numLayers, int numKeyValueHeads, int headDim, int batchSize = 1) {
+            _keys = new Tensor<float>[numLayers];
+            _values = new Tensor<float>[numLayers];
+            var empty = new TensorShape(batchSize, numKeyValueHeads, 0, headDim);
+            for (int i = 0; i < numLayers; i++) {
+                _keys[i] = new Tensor<float>(empty);
+                _values[i] = new Tensor<float>(empty);
             }
         }
 
-        public override IEnumerator<(Tensor Key, Tensor Value)> GetEnumerator() {
-            // Ensure both lists have the same number of elements
-            int count = Math.Min(KeyCache.Count, ValueCache.Count);
+        public int NumLayers => _keys.Length;
 
-            for (int i = 0; i < count; i++) {
-                yield return (KeyCache[i], ValueCache[i]);
-            }
+        public override (Tensor<float> Key, Tensor<float> Value) this[int layerIdx] => (_keys[layerIdx], _values[layerIdx]);
+
+        public override int GetSeqLength(int layerIdx = 0) => _keys[layerIdx].shape[2];
+
+        /// <summary>
+        /// Replaces the keys and values of a layer with ones that include the new tokens, and disposes the old ones.
+        /// </summary>
+        public void Update(Tensor<float> keyStates, Tensor<float> valueStates, int layerIdx) {
+            _keys[layerIdx].Dispose();
+            _values[layerIdx].Dispose();
+            _keys[layerIdx] = keyStates;
+            _values[layerIdx] = valueStates;
         }
 
-        public override int GetSeqLength(int? layerIdx = 0) {
-            if (KeyCache.Count <= layerIdx) {
-                return 0;
-            }
-            return KeyCache[layerIdx.Value].shape[-2];
-        }
-
-        public override void Update(Tensor keyStates, Tensor valueStates, int layerIdx) {
-            // Update the number of seen tokens
-            if (layerIdx == 0) {
-                _seenTokens += keyStates.shape[-2];
-            }
-
-            // Update the cache
-            if (KeyCache.Count <= layerIdx) {
-                KeyCache.Add(keyStates);
-                ValueCache.Add(valueStates);
-            } else {
-                KeyCache[layerIdx] = Ops.Cat(KeyCache[layerIdx], keyStates, axis: -2);
-                ValueCache[layerIdx] = Ops.Cat(ValueCache[layerIdx], valueStates, axis: -2);
+        public override void Dispose() {
+            for (int i = 0; i < _keys.Length; i++) {
+                _keys[i]?.Dispose();
+                _values[i]?.Dispose();
             }
         }
     }

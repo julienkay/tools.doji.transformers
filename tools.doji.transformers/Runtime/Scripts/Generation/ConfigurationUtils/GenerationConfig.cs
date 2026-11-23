@@ -1,417 +1,95 @@
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.Runtime.Serialization;
-using Unity.InferenceEngine;
+using System.Linq;
 
 namespace Doji.AI.Transformers {
 
-    public class WatermarkingConfig {
-        [JsonProperty("greenlist_ratio")]
-        public float GreenlistRatio { get; set; }
+    /// <summary>
+    /// The settings of <see cref="PreTrainedModel.Generate"/>, read from a model's <c>generation_config.json</c>.
+    /// Has the fields of transformers' <c>GenerationConfig</c> that this package supports, with the same defaults.
+    /// </summary>
+    public class GenerationConfig {
 
-        [JsonProperty("bias")]
-        public float Bias { get; set; }
-
-        [JsonProperty("hashing_key")]
-        public int HashingKey { get; set; }
-
-        [JsonProperty("seeding_scheme")]
-        public string SeedingScheme { get; set; }
-
-        [JsonProperty("context_width")]
-        public int ContextWidth { get; set; }
-    }
-
-    public enum GenerationMode {
-        GREEDY_SEARCH,
-        SAMPLE,
-        BEAM_SEARCH,
-        BEAM_SAMPLE,
-        GROUP_BEAM_SEARCH,
-        CONTRASTIVE_SEARCH,
-        CONSTRAINED_BEAM_SEARCH,
-        ASSISTED_GENERATION,
-        DOLA_GENERATION
-    }
-    public enum Schedule {
-        [EnumMember(Value = "heuristic")]
-        Heuristic,
-        [EnumMember(Value = "heuristic_transient")]
-        HeuristicTransient,
-        [EnumMember(Value = "constant")]
-        Constant
-    }
-    public enum StoppingCondition { True, False, Never }
-
-    public partial class GenerationConfig {
-
-        /* Parameters that control the length of the output */
-
+        /// <summary>The maximum length of the sequence, prompt included. <see cref="MaxNewTokens"/> overrides it.</summary>
         [JsonProperty("max_length")]
-        public int? MaxLength { get; set; }
+        public int MaxLength { get; set; } = 20;
 
+        /// <summary>The maximum number of tokens to generate, not counting the prompt.</summary>
         [JsonProperty("max_new_tokens")]
         public int? MaxNewTokens { get; set; }
 
-        [JsonProperty("min_length")]
-        public int? MinLength { get; set; }
-
+        /// <summary>The minimum number of tokens to generate before an end-of-sequence token may end generation.</summary>
         [JsonProperty("min_new_tokens")]
         public int? MinNewTokens { get; set; }
 
-        [JsonProperty("early_stopping")]
-        public StoppingCondition EarlyStopping { get; set; }
-
+        /// <summary>The maximum time to generate for, in seconds.</summary>
         [JsonProperty("max_time")]
         public float? MaxTime { get; set; }
 
-        [JsonProperty("stop_strings")]
-        public List<string> StopStrings { get; set; }
-
-
-        /* Parameters that control the generation strategy used */
-
+        /// <summary>Whether to sample the next token. False picks the most likely one (greedy decoding).</summary>
         [JsonProperty("do_sample")]
         public bool DoSample { get; set; }
 
+        /// <summary>Only 1 is supported: beam search is not.</summary>
         [JsonProperty("num_beams")]
-        public int? NumBeams { get; set; }
-
-        [JsonProperty("num_beam_groups")]
-        public int? NumBeamGroups { get; set; }
-
-        [JsonProperty("penalty_alpha")]
-        public float? PenaltyAlpha { get; set; }
+        public int NumBeams { get; set; } = 1;
 
         [JsonProperty("use_cache")]
-        public bool? UseCache { get; set; }
-
-
-        /* Parameters for manipulation of the model output logits */
+        public bool UseCache { get; set; } = true;
 
         [JsonProperty("temperature")]
-        public float? Temperature { get; set; }
+        public float Temperature { get; set; } = 1f;
 
         [JsonProperty("top_k")]
-        public int? TopK { get; set; }
+        public int TopK { get; set; } = 50;
 
         [JsonProperty("top_p")]
-        public float? TopP { get; set; }
+        public float TopP { get; set; } = 1f;
 
         [JsonProperty("min_p")]
         public float? MinP { get; set; }
 
-        [JsonProperty("typical_p")]
-        public float? TypicalP { get; set; }
-
-        [JsonProperty("epsilon_cutoff")]
-        public float? EpsilonCutoff { get; set; }
-
-        [JsonProperty("eta_cutoff")]
-        public float? EtaCutoff { get; set; }
-
-        [JsonProperty("diversity_penalty")]
-        public float? DiversityPenalty { get; set; }
-
         [JsonProperty("repetition_penalty")]
-        public float? RepetitionPenalty { get; set; }
-
-        [JsonProperty("encoder_repetition_penalty")]
-        public float? EncoderRepetitionPenalty { get; set; }
-
-        [JsonProperty("length_penalty")]
-        public float? LengthPenalty { get; set; }
-
-        [JsonProperty("no_repeat_ngram_size")]
-        public int? NoRepeatNgramSize { get; set; }
-
-        [JsonProperty("bad_words_ids")]
-        public List<List<int>> BadWordsIds { get; set; }
-
-        [JsonProperty("force_words_ids")]
-        public List<List<int>> ForceWordsIds { get; set; }
-
-        [JsonProperty("renormalize_logits")]
-        public bool? RenormalizeLogits { get; set; }
-
-        [JsonProperty("constraints")]
-        public List<string> Constraints { get; set; }
-
-        [JsonProperty("forced_bos_token_id")]
-        public int? ForcedBosTokenId { get; set; }
-
-        [JsonProperty("forced_eos_token_id")]
-        public int? ForcedEosTokenId { get; set; }
-
-        [JsonProperty("remove_invalid_values")]
-        public bool? RemoveInvalidValues { get; set; }
-
-        [JsonProperty("exponential_decay_length_penalty")]
-        public (int startIndex, float decayFactor)? ExponentialDecayLengthPenalty { get; set; }
-
-        [JsonProperty("suppress_tokens")]
-        public List<int> SuppressTokens { get; set; }
-
-        [JsonProperty("begin_suppress_tokens")]
-        public List<int> BeginSuppressTokens { get; set; }
-
-        [JsonProperty("forced_decoder_ids")]
-        public List<List<int>> ForcedDecoderIds { get; set; }
-
-        [JsonProperty("sequence_bias")]
-        public object SequenceBias { get; set; }
-
-        [JsonProperty("token_healing")]
-        public bool? TokenHealing { get; set; }
-
-        [JsonProperty("guidance_scale")]
-        public float? GuidanceScale { get; set; }
-
-        [JsonProperty("low_memory")]
-        public bool? LowMemory { get; set; }
-        
-        [JsonProperty("watermarking_config")]
-        //TODO: custom convert in case its passed as dict
-        public WatermarkingConfig WatermarkingConfig { get; set; }
-
-        /*  Parameters that define the output variables of generate */
-
-        [JsonProperty("num_return_sequences")]
-        public int? NumReturnSequences { get; set; }
-
-        [JsonProperty("output_attentions")]
-        public bool? OutputAttentions { get; set; }
-
-        [JsonProperty("output_hidden_states")]
-        public bool? OutputHiddenStates { get; set; }
-
-        [JsonProperty("output_scores")]
-        public bool? OutputScores { get; set; }
-
-        [JsonProperty("output_logits")]
-        public bool? OutputLogits { get; set; }
-
-        [JsonProperty("return_dict_in_generate")]
-        public bool? ReturnDictInGenerate { get; set; }
-
-
-        /* special tokens that can be used at generation time */
+        public float RepetitionPenalty { get; set; } = 1f;
 
         [JsonProperty("bos_token_id")]
         public int? BosTokenId { get; set; }
 
+        /// <summary>The tokens that end generation. The json may have one id or a list.</summary>
         [JsonProperty("eos_token_id")]
+        [JsonConverter(typeof(IdsConverter))]
         public int[] EosTokenId { get; set; }
 
         [JsonProperty("pad_token_id")]
         public int? PadTokenId { get; set; }
 
-
-        /* Generation parameters exclusive to encoder-decoder models */
-
-        [JsonProperty("encoder_no_repeat_ngram_size")]
-        public int? EncoderNoRepeatNgramSize { get; set; }
-
-        [JsonProperty("decoder_start_token_id")]
-        public int[] DecoderStartTokenId { get; set; }
-
-
-        /* Generation parameters exclusive to assistant generation */
-
-        [JsonProperty("num_assistant_tokens")]
-        public int? NumAssistantTokens { get; set; }
-
-        [JsonProperty("num_assistant_tokens_schedule")]
-        public Schedule NumAssistantTokensSchedule { get; set; }
-
-        [JsonProperty("prompt_lookup_num_tokens")]
-        public int? PromptLookupNumTokens { get; set; }
-
-        [JsonProperty("max_matching_ngram_size")]
-        public int? MaxMatchingNgramSize { get; set; }
-
-
-        /* Generation parameters exclusive to assistant generation */
-
-        [JsonProperty("dola_layers")]
-        public object DolaLayers { get; set; }
-
-
-        /* Parameters specific to the caching mechanism: */
-
-        [JsonProperty("cache_implementation")]
-        public string CacheImplementation { get; set; }
-
-        [JsonProperty("cache_config")]
-        public CacheConfig CacheConfig { get; set; }
-
-        [JsonProperty("return_legacy_cache")]
-        public bool ReturnLegacyCache { get; set; }
-
-
-        /* remaining attributes */
-
-        [JsonProperty("_from_model_config")]
-        public bool FromModelConfig { get; set; }
-
-        [JsonProperty("transformers_version")]
-        public string TransformersVersion { get; set; }
-
-
-        [JsonIgnore]
-        internal Tensor<int> BosTokenTensor { get; set; }
-        [JsonIgnore]
-        internal Tensor<int> EosTokenTensor { get; set; }
-        [JsonIgnore]
-        internal Tensor<int> PadTokenTensor { get; set; }
-        [JsonIgnore]
-        internal Tensor<int> DecoderStartTokenTensor { get; set; }
-
-        public GenerationConfig() {
-            // Parameters that control the length of the output
-            MaxLength = 20;
-            MaxNewTokens = null;
-            MinLength = 0;
-            MinNewTokens = null;
-            EarlyStopping = StoppingCondition.False;
-            MaxTime = null;
-            StopStrings = null;
-
-            // Parameters that control the generation strategy used
-            DoSample = false;
-            NumBeams = 1;
-            NumBeamGroups = 1;
-            PenaltyAlpha = null;
-            UseCache = true;
-
-            // Parameters for manipulation of the model output logits
-            Temperature = 1.0f;
-            TopK = 50;
-            TopP = 1.0f;
-            MinP = null;
-            TypicalP = 1.0f;
-            EpsilonCutoff = 0.0f;
-            EtaCutoff = 0.0f;
-            DiversityPenalty = 0.0f;
-            RepetitionPenalty = 1.0f;
-            EncoderRepetitionPenalty = 1.0f;
-            LengthPenalty = 1.0f;
-            NoRepeatNgramSize = 0;
-            BadWordsIds = null;
-            ForceWordsIds = null;
-            RenormalizeLogits = false;
-            Constraints = null;
-            ForcedBosTokenId = null;
-            ForcedEosTokenId = null;
-            RemoveInvalidValues = false;
-            ExponentialDecayLengthPenalty = null;
-            SuppressTokens = null;
-            BeginSuppressTokens = null;
-            ForcedDecoderIds = null;
-            SequenceBias = null;
-            TokenHealing = false;
-            GuidanceScale = null;
-            LowMemory = null;
-            WatermarkingConfig = null;
-
-            // Parameters that define the output variables of `generate`
-            NumReturnSequences = 1;
-            OutputAttentions = false;
-            OutputHiddenStates = false;
-            OutputScores = false;
-            OutputLogits = false;
-            ReturnDictInGenerate = false;
-
-            // Special tokens that can be used at generation time
-            PadTokenId = null;
-            BosTokenId = null;
-            EosTokenId = null;
-
-            // Generation parameters exclusive to encoder-decoder models
-            EncoderNoRepeatNgramSize = 0;
-            DecoderStartTokenId = null;
-
-            // Assistant generation
-            NumAssistantTokens = 5;
-            NumAssistantTokensSchedule = Schedule.Heuristic;
-
-            // DoLa generation
-            DolaLayers = null;
-
-            // Cache implementation
-            CacheImplementation = null;
-            CacheConfig = null;
-            ReturnLegacyCache = false;
-
-            //Prompt lookup decoding
-            PromptLookupNumTokens = null;
-            MaxMatchingNgramSize = null;
-
-            // The remaining attributes do not parametrize `.generate()`, but are informative and/or used by the hub
-            // interface.
-            FromModelConfig = false;
-        }
-
         public static GenerationConfig Deserialize(string json) {
             return JsonConvert.DeserializeObject<GenerationConfig>(json);
         }
 
-        public string Serialize() {
-            return JsonConvert.SerializeObject(this);
+        public GenerationConfig Clone() {
+            var clone = (GenerationConfig)MemberwiseClone();
+            clone.EosTokenId = (int[])EosTokenId?.Clone();
+            return clone;
         }
 
         /// <summary>
-        /// Returns the generation mode triggered by the [`GenerationConfig`] instance.
+        /// Reads one id or a list of ids.
         /// </summary>
-        public GenerationMode GetGenerationMode(PreTrainedModel assistantModel = null) {
-            GenerationMode generationMode;
-
-            if (Constraints != null || ForceWordsIds != null) {
-                generationMode = GenerationMode.CONSTRAINED_BEAM_SEARCH;
-            } else if (NumBeams == 1) {
-                if (!DoSample) {
-                    if (TopK != null && TopK.Value > 1 && PenaltyAlpha != null && PenaltyAlpha.Value > 0) {
-                        generationMode = GenerationMode.CONTRASTIVE_SEARCH;
-                    } else {
-                        generationMode = GenerationMode.GREEDY_SEARCH;
-                    }
-                } else {
-                    generationMode = GenerationMode.SAMPLE;
-                }
-            } else {
-                if (NumBeamGroups > 1) {
-                    generationMode = GenerationMode.GROUP_BEAM_SEARCH;
-                } else if (DoSample) {
-                    generationMode = GenerationMode.BEAM_SAMPLE;
-                } else {
-                    generationMode = GenerationMode.BEAM_SEARCH;
-                }
+        private class IdsConverter : JsonConverter<int[]> {
+            public override int[] ReadJson(JsonReader reader, Type objectType, int[] existingValue, bool hasExistingValue, JsonSerializer serializer) {
+                JToken token = JToken.Load(reader);
+                return token.Type switch {
+                    JTokenType.Null => null,
+                    JTokenType.Array => token.Select(t => (int)t).ToArray(),
+                    _ => new[] { (int)token },
+                };
             }
 
-            if (assistantModel != null || PromptLookupNumTokens != null) {
-                if (generationMode == GenerationMode.GREEDY_SEARCH || generationMode == GenerationMode.SAMPLE) {
-                    generationMode = GenerationMode.ASSISTED_GENERATION;
-                } else {
-                    throw new ArgumentException(
-                        "You've set `assistantModel`, which triggers assisted generation. Currently, assisted generation " +
-                        "is only supported with Greedy Search and Sample."
-                    );
-                }
+            public override void WriteJson(JsonWriter writer, int[] value, JsonSerializer serializer) {
+                serializer.Serialize(writer, value);
             }
-
-            if (DolaLayers != null) {
-                if (generationMode == GenerationMode.GREEDY_SEARCH || generationMode == GenerationMode.SAMPLE) {
-                    generationMode = GenerationMode.DOLA_GENERATION;
-                } else {
-                    throw new ArgumentException(
-                        "You've set `dolaLayers`, which triggers DoLa generation. Currently, DoLa generation " +
-                        "is only supported with Greedy Search and Sample."
-                    );
-                }
-            }
-
-            return generationMode;
         }
     }
 }

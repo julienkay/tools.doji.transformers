@@ -1,0 +1,108 @@
+{
+ "cases": [
+  {
+   "text": "Hello world!",
+   "ids": [
+    19556,
+    905,
+    17
+   ],
+   "decoded": "Hello world!",
+   "decoded_skip_special": "Hello world!"
+  },
+  {
+   "text": "The year 2024 had 365 days, didn't it?",
+   "ids": [
+    504,
+    713,
+    216,
+    34,
+    32,
+    34,
+    36,
+    761,
+    216,
+    35,
+    38,
+    37,
+    2009,
+    28,
+    3683,
+    982,
+    357,
+    47
+   ],
+   "decoded": "The year 2024 had 365 days, didn't it?",
+   "decoded_skip_special": "The year 2024 had 365 days, didn't it?"
+  },
+  {
+   "text": "  leading spaces,\ttabs\nand new lines\n\n",
+   "ids": [
+    216,
+    2899,
+    5600,
+    28,
+    197,
+    100,
+    7366,
+    198,
+    397,
+    725,
+    3204,
+    1116
+   ],
+   "decoded": "  leading spaces,\ttabs\nand new lines\n\n",
+   "decoded_skip_special": "  leading spaces,\ttabs\nand new lines\n\n"
+  },
+  {
+   "text": "Größe, naïve café, 東京, 😀",
+   "ids": [
+    27302,
+    7466,
+    34878,
+    85,
+    28,
+    15486,
+    46494,
+    37366,
+    28,
+    17097,
+    247,
+    126,
+    16736,
+    122,
+    28,
+    40303,
+    218
+   ],
+   "decoded": "Größe, naïve café, 東京, 😀",
+   "decoded_skip_special": "Größe, naïve café, 東京, 😀"
+  },
+  {
+   "text": "<|im_start|>user\nWhat is 2+2?<|im_end|>\n",
+   "ids": [
+    1,
+    4093,
+    198,
+    1780,
+    314,
+    216,
+    34,
+    27,
+    34,
+    47,
+    2,
+    198
+   ],
+   "decoded": "<|im_start|>user\nWhat is 2+2?<|im_end|>\n",
+   "decoded_skip_special": "user\nWhat is 2+2?\n"
+  }
+ ],
+ "messages": [
+  {
+   "role": "user",
+   "content": "What is the capital of France?"
+  }
+ ],
+ "chat": "<|im_start|>system\nYou are a helpful AI assistant named SmolLM, trained by Hugging Face<|im_end|>\n<|im_start|>user\nWhat is the capital of France?<|im_end|>\n<|im_start|>assistant\n"
+}

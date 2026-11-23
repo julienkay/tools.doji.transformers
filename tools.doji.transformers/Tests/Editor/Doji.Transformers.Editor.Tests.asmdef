@@ -2,9 +2,11 @@
     "name": "Doji.Transformers.Editor.Tests",
     "rootNamespace": "",
     "references": [
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
-        "Doji.Transformers"
+        "GUID:27619889b8ba8c24980f49ee34dbb44a",
+        "GUID:0acc523941302664db1f4e527237feb3",
+        "GUID:792a551df4a0292469be78bbb192f6d6",
+        "GUID:63a57c8b658089e49a173b0f0c4870a7",
+        "GUID:33634f0321224cbab008d083a50cd823"
     ],
     "includePlatforms": [
         "Editor"

@@ -77,6 +77,12 @@ namespace Doji.AI.Transformers {
         [JsonProperty("tokenizer_class")]
         public string TokenizerClass { get; set; }
 
+        /// <summary>
+        /// The Jinja chat template: a string, or a list of named templates in some models.
+        /// </summary>
+        [JsonProperty("chat_template")]
+        public Newtonsoft.Json.Linq.JToken ChatTemplate { get; set; }
+
         public static TokenizerConfig Deserialize(string json) {
             TokenizerConfig config = JsonConvert.DeserializeObject<TokenizerConfig>(json);
             return config;

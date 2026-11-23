@@ -1,0 +1,2164 @@
+{
+ "source": "julienkay/tiny-random-LlamaForCausalLM-onnx",
+ "revision": "d2dc92c8cfdefb40d8654db50409278551cc0591",
+ "repo": "julienkay/tiny-random-LlamaForCausalLM-onnx",
+ "subfolder": "",
+ "class": "GPT2TokenizerFast",
+ "cases": [
+  {
+   "text": "",
+   "ids": [],
+   "decoded": "",
+   "decoded_skip_special": "",
+   "decoded_each": []
+  },
+  {
+   "text": " ",
+   "ids": [
+    216
+   ],
+   "decoded": " ",
+   "decoded_skip_special": " ",
+   "decoded_each": [
+    " "
+   ]
+  },
+  {
+   "text": "   ",
+   "ids": [
+    333
+   ],
+   "decoded": "   ",
+   "decoded_skip_special": "   ",
+   "decoded_each": [
+    "   "
+   ]
+  },
+  {
+   "text": "\n",
+   "ids": [
+    198
+   ],
+   "decoded": "\n",
+   "decoded_skip_special": "\n",
+   "decoded_each": [
+    "\n"
+   ]
+  },
+  {
+   "text": "\n\n",
+   "ids": [
+    1116
+   ],
+   "decoded": "\n\n",
+   "decoded_skip_special": "\n\n",
+   "decoded_each": [
+    "\n\n"
+   ]
+  },
+  {
+   "text": "\t",
+   "ids": [
+    197
+   ],
+   "decoded": "\t",
+   "decoded_skip_special": "\t",
+   "decoded_each": [
+    "\t"
+   ]
+  },
+  {
+   "text": "\r\n",
+   "ids": [
+    2738
+   ],
+   "decoded": "\r\n",
+   "decoded_skip_special": "\r\n",
+   "decoded_each": [
+    "\r\n"
+   ]
+  },
+  {
+   "text": " \n ",
+   "ids": [
+    3717,
+    216
+   ],
+   "decoded": " \n ",
+   "decoded_skip_special": " \n ",
+   "decoded_each": [
+    " \n",
+    " "
+   ]
+  },
+  {
+   "text": "a",
+   "ids": [
+    81
+   ],
+   "decoded": "a",
+   "decoded_skip_special": "a",
+   "decoded_each": [
+    "a"
+   ]
+  },
+  {
+   "text": " a",
+   "ids": [
+    253
+   ],
+   "decoded": " a",
+   "decoded_skip_special": " a",
+   "decoded_each": [
+    " a"
+   ]
+  },
+  {
+   "text": "a ",
+   "ids": [
+    81,
+    216
+   ],
+   "decoded": "a ",
+   "decoded_skip_special": "a ",
+   "decoded_each": [
+    "a",
+    " "
+   ]
+  },
+  {
+   "text": "  a  b   c  ",
+   "ids": [
+    216,
+    253,
+    216,
+    278,
+    256,
+    265,
+    256
+   ],
+   "decoded": "  a  b   c  ",
+   "decoded_skip_special": "  a  b   c  ",
+   "decoded_each": [
+    " ",
+    " a",
+    " ",
+    " b",
+    "  ",
+    " c",
+    "  "
+   ]
+  },
+  {
+   "text": "line1\nline2\n\nline3",
+   "ids": [
+    1311,
+    33,
+    198,
+    1311,
+    34,
+    198,
+    198,
+    1311,
+    35
+   ],
+   "decoded": "line1\nline2\n\nline3",
+   "decoded_skip_special": "line1\nline2\n\nline3",
+   "decoded_each": [
+    "line",
+    "1",
+    "\n",
+    "line",
+    "2",
+    "\n",
+    "\n",
+    "line",
+    "3"
+   ]
+  },
+  {
+   "text": "   \n\n  indented",
+   "ids": [
+    333,
+    8866,
+    641,
+    6574
+   ],
+   "decoded": "   \n\n  indented",
+   "decoded_skip_special": "   \n\n  indented",
+   "decoded_each": [
+    "   ",
+    "\n\n ",
+    " ind",
+    "ented"
+   ]
+  },
+  {
+   "text": "trailing spaces   ",
+   "ids": [
+    4861,
+    4966,
+    5600,
+    333
+   ],
+   "decoded": "trailing spaces   ",
+   "decoded_skip_special": "trailing spaces   ",
+   "decoded_each": [
+    "tra",
+    "iling",
+    " spaces",
+    "   "
+   ]
+  },
+  {
+   "text": "tab\tseparated\tvalues",
+   "ids": [
+    15999,
+    197,
+    19509,
+    483,
+    197,
+    6347
+   ],
+   "decoded": "tab\tseparated\tvalues",
+   "decoded_skip_special": "tab\tseparated\tvalues",
+   "decoded_each": [
+    "tab",
+    "\t",
+    "separ",
+    "ated",
+    "\t",
+    "values"
+   ]
+  },
+  {
+   "text": "Hello world!",
+   "ids": [
+    19556,
+    905,
+    17
+   ],
+   "decoded": "Hello world!",
+   "decoded_skip_special": "Hello world!",
+   "decoded_each": [
+    "Hello",
+    " world",
+    "!"
+   ]
+  },
+  {
+   "text": "Hello  world",
+   "ids": [
+    19556,
+    216,
+    905
+   ],
+   "decoded": "Hello  world",
+   "decoded_skip_special": "Hello  world",
+   "decoded_each": [
+    "Hello",
+    " ",
+    " world"
+   ]
+  },
+  {
+   "text": "HeLLo WoRLD",
+   "ids": [
+    3681,
+    16421,
+    95,
+    408,
+    95,
+    9483,
+    52
+   ],
+   "decoded": "HeLLo WoRLD",
+   "decoded_skip_special": "HeLLo WoRLD",
+   "decoded_each": [
+    "He",
+    "LL",
+    "o",
+    " W",
+    "o",
+    "RL",
+    "D"
+   ]
+  },
+  {
+   "text": "ALLCAPS TEXT",
+   "ids": [
+    12631,
+    33467,
+    67,
+    48962
+   ],
+   "decoded": "ALLCAPS TEXT",
+   "decoded_skip_special": "ALLCAPS TEXT",
+   "decoded_each": [
+    "ALL",
+    "CAP",
+    "S",
+    " TEXT"
+   ]
+  },
+  {
+   "text": "The quick brown fox jumps over the lazy dog.",
+   "ids": [
+    504,
+    2365,
+    6354,
+    16438,
+    27003,
+    690,
+    260,
+    23790,
+    2767,
+    30
+   ],
+   "decoded": "The quick brown fox jumps over the lazy dog.",
+   "decoded_skip_special": "The quick brown fox jumps over the lazy dog.",
+   "decoded_each": [
+    "The",
+    " quick",
+    " brown",
+    " fox",
+    " jumps",
+    " over",
+    " the",
+    " lazy",
+    " dog",
+    "."
+   ]
+  },
+  {
+   "text": "supercalifragilisticexpialidocioussupercalifragilisticexpialidocioussupercalifragilisticexpialidocious",
+   "ids": [
+    14174,
+    5020,
+    342,
+    1808,
+    301,
+    40482,
+    104,
+    96,
+    409,
+    311,
+    42288,
+    14174,
+    5020,
+    342,
+    1808,
+    301,
+    40482,
+    104,
+    96,
+    409,
+    311,
+    42288,
+    14174,
+    5020,
+    342,
+    1808,
+    301,
+    40482,
+    104,
+    96,
+    409,
+    311,
+    42288
+   ],
+   "decoded": "supercalifragilisticexpialidocioussupercalifragilisticexpialidocioussupercalifragilisticexpialidocious",
+   "decoded_skip_special": "supercalifragilisticexpialidocioussupercalifragilisticexpialidocioussupercalifragilisticexpialidocious",
+   "decoded_each": [
+    "super",
+    "cal",
+    "if",
+    "rag",
+    "il",
+    "istice",
+    "x",
+    "p",
+    "ial",
+    "id",
+    "ocious",
+    "super",
+    "cal",
+    "if",
+    "rag",
+    "il",
+    "istice",
+    "x",
+    "p",
+    "ial",
+    "id",
+    "ocious",
+    "super",
+    "cal",
+    "if",
+    "rag",
+    "il",
+    "istice",
+    "x",
+    "p",
+    "ial",
+    "id",
+    "ocious"
+   ]
+  },
+  {
+   "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "ids": [
+    46880,
+    46880,
+    46880,
+    46880,
+    46880,
+    46880,
+    46880,
+    46880,
+    46880,
+    46880,
+    46880,
+    46880,
+    46880,
+    46880,
+    46880,
+    46880
+   ],
+   "decoded": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "decoded_skip_special": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+   "decoded_each": [
+    "aaaa",
+    "aaaa",
+    "aaaa",
+    "aaaa",
+    "aaaa",
+    "aaaa",
+    "aaaa",
+    "aaaa",
+    "aaaa",
+    "aaaa",
+    "aaaa",
+    "aaaa",
+    "aaaa",
+    "aaaa",
+    "aaaa",
+    "aaaa"
+   ]
+  },
+  {
+   "text": "!!!!!!!!!!!!!!!!!!!!",
+   "ids": [
+    36689,
+    36689,
+    36689,
+    36689,
+    36689
+   ],
+   "decoded": "!!!!!!!!!!!!!!!!!!!!",
+   "decoded_skip_special": "!!!!!!!!!!!!!!!!!!!!",
+   "decoded_each": [
+    "!!!!",
+    "!!!!",
+    "!!!!",
+    "!!!!",
+    "!!!!"
+   ]
+  },
+  {
+   "text": "abababababababababababababababababababababababababababababab",
+   "ids": [
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369,
+    369
+   ],
+   "decoded": "abababababababababababababababababababababababababababababab",
+   "decoded_skip_special": "abababababababababababababababababababababababababababababab",
+   "decoded_each": [
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab",
+    "ab"
+   ]
+  },
+  {
+   "text": "I'm sure you're right, we've seen it, they'll come, he'd go, it's fine.",
+   "ids": [
+    57,
+    5248,
+    2090,
+    346,
+    2316,
+    1048,
+    28,
+    392,
+    3543,
+    2269,
+    357,
+    28,
+    502,
+    3060,
+    1690,
+    28,
+    384,
+    6737,
+    685,
+    28,
+    357,
+    506,
+    4979,
+    30
+   ],
+   "decoded": "I'm sure you're right, we've seen it, they'll come, he'd go, it's fine.",
+   "decoded_skip_special": "I'm sure you're right, we've seen it, they'll come, he'd go, it's fine.",
+   "decoded_each": [
+    "I",
+    "'m",
+    " sure",
+    " you",
+    "'re",
+    " right",
+    ",",
+    " we",
+    "'ve",
+    " seen",
+    " it",
+    ",",
+    " they",
+    "'ll",
+    " come",
+    ",",
+    " he",
+    "'d",
+    " go",
+    ",",
+    " it",
+    "'s",
+    " fine",
+    "."
+   ]
+  },
+  {
+   "text": "I'M DON'T YOU'RE",
+   "ids": [
+    57,
+    23,
+    61,
+    422,
+    2154,
+    23,
+    68,
+    12246,
+    23,
+    3256
+   ],
+   "decoded": "I'M DON'T YOU'RE",
+   "decoded_skip_special": "I'M DON'T YOU'RE",
+   "decoded_each": [
+    "I",
+    "'",
+    "M",
+    " D",
+    "ON",
+    "'",
+    "T",
+    " YOU",
+    "'",
+    "RE"
+   ]
+  },
+  {
+   "text": "can't won't shan't y'all",
+   "ids": [
+    4055,
+    982,
+    3763,
+    982,
+    443,
+    276,
+    982,
+    329,
+    23,
+    449
+   ],
+   "decoded": "can't won't shan't y'all",
+   "decoded_skip_special": "can't won't shan't y'all",
+   "decoded_each": [
+    "can",
+    "'t",
+    " won",
+    "'t",
+    " sh",
+    "an",
+    "'t",
+    " y",
+    "'",
+    "all"
+   ]
+  },
+  {
+   "text": "'quoted' and \"double quoted\"",
+   "ids": [
+    23,
+    385,
+    5036,
+    23,
+    284,
+    476,
+    21414,
+    16302,
+    18
+   ],
+   "decoded": "'quoted' and \"double quoted\"",
+   "decoded_skip_special": "'quoted' and \"double quoted\"",
+   "decoded_each": [
+    "'",
+    "qu",
+    "oted",
+    "'",
+    " and",
+    " \"",
+    "double",
+    " quoted",
+    "\""
+   ]
+  },
+  {
+   "text": "rock 'n' roll",
+   "ids": [
+    12701,
+    637,
+    94,
+    23,
+    5089
+   ],
+   "decoded": "rock 'n' roll",
+   "decoded_skip_special": "rock 'n' roll",
+   "decoded_each": [
+    "rock",
+    " '",
+    "n",
+    "'",
+    " roll"
+   ]
+  },
+  {
+   "text": "1234567890",
+   "ids": [
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    32
+   ],
+   "decoded": "1234567890",
+   "decoded_skip_special": "1234567890",
+   "decoded_each": [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "0"
+   ]
+  },
+  {
+   "text": "3.14159",
+   "ids": [
+    35,
+    30,
+    33,
+    36,
+    33,
+    37,
+    41
+   ],
+   "decoded": "3.14159",
+   "decoded_skip_special": "3.14159",
+   "decoded_each": [
+    "3",
+    ".",
+    "1",
+    "4",
+    "1",
+    "5",
+    "9"
+   ]
+  },
+  {
+   "text": "1,000,000",
+   "ids": [
+    33,
+    28,
+    32,
+    32,
+    32,
+    28,
+    32,
+    32,
+    32
+   ],
+   "decoded": "1,000,000",
+   "decoded_skip_special": "1,000,000",
+   "decoded_each": [
+    "1",
+    ",",
+    "0",
+    "0",
+    "0",
+    ",",
+    "0",
+    "0",
+    "0"
+   ]
+  },
+  {
+   "text": "v2.0.1",
+   "ids": [
+    102,
+    34,
+    30,
+    32,
+    30,
+    33
+   ],
+   "decoded": "v2.0.1",
+   "decoded_skip_special": "v2.0.1",
+   "decoded_each": [
+    "v",
+    "2",
+    ".",
+    "0",
+    ".",
+    "1"
+   ]
+  },
+  {
+   "text": "2024-11-23",
+   "ids": [
+    34,
+    32,
+    34,
+    36,
+    29,
+    33,
+    33,
+    29,
+    34,
+    35
+   ],
+   "decoded": "2024-11-23",
+   "decoded_skip_special": "2024-11-23",
+   "decoded_each": [
+    "2",
+    "0",
+    "2",
+    "4",
+    "-",
+    "1",
+    "1",
+    "-",
+    "2",
+    "3"
+   ]
+  },
+  {
+   "text": "x² + y³",
+   "ids": [
+    104,
+    19133,
+    1232,
+    329,
+    39050
+   ],
+   "decoded": "x² + y³",
+   "decoded_skip_special": "x² + y³",
+   "decoded_each": [
+    "x",
+    "²",
+    " +",
+    " y",
+    "³"
+   ]
+  },
+  {
+   "text": "Ⅻ chapters",
+   "ids": [
+    173,
+    223,
+    121,
+    12279
+   ],
+   "decoded": "Ⅻ chapters",
+   "decoded_skip_special": "Ⅻ chapters",
+   "decoded_each": [
+    "�",
+    "�",
+    "�",
+    " chapters"
+   ]
+  },
+  {
+   "text": "١٢٣ ٤٥٦",
+   "ids": [
+    164,
+    111,
+    164,
+    112,
+    164,
+    113,
+    216,
+    164,
+    114,
+    164,
+    115,
+    164,
+    116
+   ],
+   "decoded": "١٢٣ ٤٥٦",
+   "decoded_skip_special": "١٢٣ ٤٥٦",
+   "decoded_each": [
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    " ",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�"
+   ]
+  },
+  {
+   "text": "0x1F 0b1010 1e-5",
+   "ids": [
+    32,
+    104,
+    33,
+    54,
+    216,
+    32,
+    82,
+    33,
+    32,
+    33,
+    32,
+    216,
+    33,
+    85,
+    29,
+    37
+   ],
+   "decoded": "0x1F 0b1010 1e-5",
+   "decoded_skip_special": "0x1F 0b1010 1e-5",
+   "decoded_each": [
+    "0",
+    "x",
+    "1",
+    "F",
+    " ",
+    "0",
+    "b",
+    "1",
+    "0",
+    "1",
+    "0",
+    " ",
+    "1",
+    "e",
+    "-",
+    "5"
+   ]
+  },
+  {
+   "text": "The year 2024 had 365 days.",
+   "ids": [
+    504,
+    713,
+    216,
+    34,
+    32,
+    34,
+    36,
+    761,
+    216,
+    35,
+    38,
+    37,
+    2009,
+    30
+   ],
+   "decoded": "The year 2024 had 365 days.",
+   "decoded_skip_special": "The year 2024 had 365 days.",
+   "decoded_each": [
+    "The",
+    " year",
+    " ",
+    "2",
+    "0",
+    "2",
+    "4",
+    " had",
+    " ",
+    "3",
+    "6",
+    "5",
+    " days",
+    "."
+   ]
+  },
+  {
+   "text": "Call 555-0100 at 10:30am.",
+   "ids": [
+    12800,
+    216,
+    37,
+    37,
+    37,
+    29,
+    32,
+    33,
+    32,
+    32,
+    418,
+    216,
+    33,
+    32,
+    42,
+    35,
+    32,
+    332,
+    30
+   ],
+   "decoded": "Call 555-0100 at 10:30am.",
+   "decoded_skip_special": "Call 555-0100 at 10:30am.",
+   "decoded_each": [
+    "Call",
+    " ",
+    "5",
+    "5",
+    "5",
+    "-",
+    "0",
+    "1",
+    "0",
+    "0",
+    " at",
+    " ",
+    "1",
+    "0",
+    ":",
+    "3",
+    "0",
+    "am",
+    "."
+   ]
+  },
+  {
+   "text": "Hello, world... !!! ??? --- ***",
+   "ids": [
+    19556,
+    28,
+    905,
+    2026,
+    5728,
+    10095,
+    9148,
+    16693,
+    21749,
+    33117
+   ],
+   "decoded": "Hello, world... !!! ??? --- ***",
+   "decoded_skip_special": "Hello, world... !!! ??? --- ***",
+   "decoded_each": [
+    "Hello",
+    ",",
+    " world",
+    "...",
+    " !",
+    "!!",
+    " ?",
+    "??",
+    " ---",
+    " ***"
+   ]
+  },
+  {
+   "text": "(a) [b] {c} <d>",
+   "ids": [
+    24,
+    81,
+    25,
+    933,
+    82,
+    77,
+    1662,
+    83,
+    109,
+    2067,
+    84,
+    46
+   ],
+   "decoded": "(a) [b] {c} <d>",
+   "decoded_skip_special": "(a) [b] {c} <d>",
+   "decoded_each": [
+    "(",
+    "a",
+    ")",
+    " [",
+    "b",
+    "]",
+    " {",
+    "c",
+    "}",
+    " <",
+    "d",
+    ">"
+   ]
+  },
+  {
+   "text": "user@example.com",
+   "ids": [
+    4093,
+    48,
+    7434,
+    30,
+    824
+   ],
+   "decoded": "user@example.com",
+   "decoded_skip_special": "user@example.com",
+   "decoded_each": [
+    "user",
+    "@",
+    "example",
+    ".",
+    "com"
+   ]
+  },
+  {
+   "text": "https://huggingface.co/docs?x=1&y=2#top",
+   "ids": [
+    4687,
+    1742,
+    88,
+    19712,
+    1803,
+    30,
+    1881,
+    31,
+    14657,
+    47,
+    104,
+    45,
+    33,
+    22,
+    105,
+    45,
+    34,
+    19,
+    4961
+   ],
+   "decoded": "https://huggingface.co/docs?x=1&y=2#top",
+   "decoded_skip_special": "https://huggingface.co/docs?x=1&y=2#top",
+   "decoded_each": [
+    "https",
+    "://",
+    "h",
+    "ugging",
+    "face",
+    ".",
+    "co",
+    "/",
+    "docs",
+    "?",
+    "x",
+    "=",
+    "1",
+    "&",
+    "y",
+    "=",
+    "2",
+    "#",
+    "top"
+   ]
+  },
+  {
+   "text": "#hashtag @mention $100 50% a&b",
+   "ids": [
+    19,
+    14307,
+    9204,
+    3394,
+    358,
+    285,
+    1885,
+    33,
+    32,
+    32,
+    216,
+    37,
+    32,
+    21,
+    253,
+    22,
+    82
+   ],
+   "decoded": "#hashtag @mention $100 50% a&b",
+   "decoded_skip_special": "#hashtag @mention $100 50% a&b",
+   "decoded_each": [
+    "#",
+    "hash",
+    "tag",
+    " @",
+    "ment",
+    "ion",
+    " $",
+    "1",
+    "0",
+    "0",
+    " ",
+    "5",
+    "0",
+    "%",
+    " a",
+    "&",
+    "b"
+   ]
+  },
+  {
+   "text": "\\path\\to\\file C:/Users/name",
+   "ids": [
+    76,
+    1537,
+    76,
+    1141,
+    76,
+    2153,
+    340,
+    39885,
+    29200,
+    31,
+    1245
+   ],
+   "decoded": "\\path\\to\\file C:/Users/name",
+   "decoded_skip_special": "\\path\\to\\file C:/Users/name",
+   "decoded_each": [
+    "\\",
+    "path",
+    "\\",
+    "to",
+    "\\",
+    "file",
+    " C",
+    ":/",
+    "Users",
+    "/",
+    "name"
+   ]
+  },
+  {
+   "text": "~`^|_=+",
+   "ids": [
+    110,
+    80,
+    78,
+    108,
+    79,
+    45,
+    27
+   ],
+   "decoded": "~`^|_=+",
+   "decoded_skip_special": "~`^|_=+",
+   "decoded_each": [
+    "~",
+    "`",
+    "^",
+    "|",
+    "_",
+    "=",
+    "+"
+   ]
+  },
+  {
+   "text": "def f(x):\n    return x**2\n",
+   "ids": [
+    1604,
+    275,
+    24,
+    104,
+    727,
+    472,
+    1003,
+    1792,
+    828,
+    34,
+    198
+   ],
+   "decoded": "def f(x):\n    return x**2\n",
+   "decoded_skip_special": "def f(x):\n    return x**2\n",
+   "decoded_each": [
+    "def",
+    " f",
+    "(",
+    "x",
+    "):",
+    "\n   ",
+    " return",
+    " x",
+    "**",
+    "2",
+    "\n"
+   ]
+  },
+  {
+   "text": "if (a && b) { c++; } else { d--; }",
+   "ids": [
+    342,
+    365,
+    81,
+    1456,
+    22,
+    278,
+    25,
+    1662,
+    265,
+    11444,
+    43,
+    4029,
+    1745,
+    1662,
+    287,
+    423,
+    43,
+    4029
+   ],
+   "decoded": "if (a && b) { c++; } else { d--; }",
+   "decoded_skip_special": "if (a && b) { c++; } else { d--; }",
+   "decoded_each": [
+    "if",
+    " (",
+    "a",
+    " &",
+    "&",
+    " b",
+    ")",
+    " {",
+    " c",
+    "++",
+    ";",
+    " }",
+    " else",
+    " {",
+    " d",
+    "--",
+    ";",
+    " }"
+   ]
+  },
+  {
+   "text": "<html><body>Hi</body></html>",
+   "ids": [
+    44,
+    5699,
+    21198,
+    5226,
+    46,
+    26843,
+    9617,
+    5226,
+    29299,
+    5699,
+    46
+   ],
+   "decoded": "<html><body>Hi</body></html>",
+   "decoded_skip_special": "<html><body>Hi</body></html>",
+   "decoded_each": [
+    "<",
+    "html",
+    "><",
+    "body",
+    ">",
+    "Hi",
+    "</",
+    "body",
+    "></",
+    "html",
+    ">"
+   ]
+  },
+  {
+   "text": "SELECT * FROM t WHERE id = 1;",
+   "ids": [
+    23428,
+    1672,
+    18451,
+    252,
+    28531,
+    4492,
+    446,
+    216,
+    33,
+    43
+   ],
+   "decoded": "SELECT * FROM t WHERE id = 1;",
+   "decoded_skip_special": "SELECT * FROM t WHERE id = 1;",
+   "decoded_each": [
+    "SELECT",
+    " *",
+    " FROM",
+    " t",
+    " WHERE",
+    " id",
+    " =",
+    " ",
+    "1",
+    ";"
+   ]
+  },
+  {
+   "text": "    four spaces\n\ttab\n        eight",
+   "ids": [
+    333,
+    1876,
+    5600,
+    198,
+    197,
+    15999,
+    448,
+    4475
+   ],
+   "decoded": "    four spaces\n\ttab\n        eight",
+   "decoded_skip_special": "    four spaces\n\ttab\n        eight",
+   "decoded_each": [
+    "   ",
+    " four",
+    " spaces",
+    "\n",
+    "\t",
+    "tab",
+    "\n       ",
+    " eight"
+   ]
+  },
+  {
+   "text": "Größe, naïve café, Ångström",
+   "ids": [
+    27302,
+    7466,
+    34878,
+    85,
+    28,
+    15486,
+    46494,
+    37366,
+    28,
+    5549,
+    223,
+    863,
+    1321,
+    45682
+   ],
+   "decoded": "Größe, naïve café, Ångström",
+   "decoded_skip_special": "Größe, naïve café, Ångström",
+   "decoded_each": [
+    "Gr",
+    "ö",
+    "ß",
+    "e",
+    ",",
+    " na",
+    "ïve",
+    " café",
+    ",",
+    " �",
+    "�",
+    "ng",
+    "str",
+    "öm"
+   ]
+  },
+  {
+   "text": "東京は日本の首都です。",
+   "ids": [
+    30679,
+    126,
+    16736,
+    122,
+    7365,
+    124,
+    23274,
+    115,
+    40993,
+    26453,
+    180,
+    116,
+    240,
+    180,
+    38466,
+    7365,
+    117,
+    39958,
+    19076
+   ],
+   "decoded": "東京は日本の首都です。",
+   "decoded_skip_special": "東京は日本の首都です。",
+   "decoded_each": [
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "本",
+    "の",
+    "�",
+    "�",
+    "�",
+    "�",
+    "��",
+    "�",
+    "�",
+    "す",
+    "。"
+   ]
+  },
+  {
+   "text": "한국어 텍스트입니다",
+   "ids": [
+    33085,
+    246,
+    181,
+    130,
+    251,
+    183,
+    240,
+    129,
+    48138,
+    223,
+    231,
+    183,
+    228,
+    114,
+    184,
+    228,
+    133,
+    183,
+    248,
+    223,
+    41259,
+    226,
+    41259,
+    114
+   ],
+   "decoded": "한국어 텍스트입니다",
+   "decoded_skip_special": "한국어 텍스트입니다",
+   "decoded_each": [
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    " �",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�"
+   ]
+  },
+  {
+   "text": "Привет, мир!",
+   "ids": [
+    155,
+    249,
+    46879,
+    16464,
+    32547,
+    28,
+    41337,
+    7872,
+    9175,
+    17
+   ],
+   "decoded": "Привет, мир!",
+   "decoded_skip_special": "Привет, мир!",
+   "decoded_each": [
+    "�",
+    "�",
+    "ри",
+    "в",
+    "ет",
+    ",",
+    " м",
+    "и",
+    "р",
+    "!"
+   ]
+  },
+  {
+   "text": "مرحبا بالعالم",
+   "ids": [
+    21706,
+    20602,
+    44626,
+    31462,
+    10805,
+    45726,
+    22208,
+    34966,
+    22208,
+    21706
+   ],
+   "decoded": "مرحبا بالعالم",
+   "decoded_skip_special": "مرحبا بالعالم",
+   "decoded_each": [
+    "م",
+    "ر",
+    "ح",
+    "ب",
+    "ا",
+    " ب",
+    "ال",
+    "ع",
+    "ال",
+    "م"
+   ]
+  },
+  {
+   "text": "हिन्दी पाठ",
+   "ids": [
+    4300,
+    134,
+    27011,
+    30658,
+    16525,
+    44757,
+    37189,
+    12335,
+    120,
+    18075,
+    4300,
+    250
+   ],
+   "decoded": "हिन्दी पाठ",
+   "decoded_skip_special": "हिन्दी पाठ",
+   "decoded_each": [
+    "�",
+    "�",
+    "ि",
+    "न",
+    "्",
+    "द",
+    "ी",
+    " �",
+    "�",
+    "ा",
+    "�",
+    "�"
+   ]
+  },
+  {
+   "text": "Ελληνικά",
+   "ids": [
+    153,
+    239,
+    17162,
+    17162,
+    25723,
+    11517,
+    12001,
+    21118,
+    26112
+   ],
+   "decoded": "Ελληνικά",
+   "decoded_skip_special": "Ελληνικά",
+   "decoded_each": [
+    "�",
+    "�",
+    "λ",
+    "λ",
+    "η",
+    "ν",
+    "ι",
+    "κ",
+    "ά"
+   ]
+  },
+  {
+   "text": "ไทย",
+   "ids": [
+    31933,
+    222,
+    10283,
+    241,
+    10283,
+    112
+   ],
+   "decoded": "ไทย",
+   "decoded_skip_special": "ไทย",
+   "decoded_each": [
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�"
+   ]
+  },
+  {
+   "text": "😀😃🎉👍🏽",
+   "ids": [
+    10813,
+    242,
+    218,
+    10813,
+    242,
+    221,
+    10813,
+    232,
+    227,
+    10813,
+    235,
+    231,
+    10813,
+    233,
+    138
+   ],
+   "decoded": "😀😃🎉👍🏽",
+   "decoded_skip_special": "😀😃🎉👍🏽",
+   "decoded_each": [
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�"
+   ]
+  },
+  {
+   "text": "👨‍👩‍👧‍👦 family",
+   "ids": [
+    10813,
+    235,
+    118,
+    321,
+    231,
+    10813,
+    235,
+    119,
+    321,
+    231,
+    10813,
+    235,
+    117,
+    321,
+    231,
+    10813,
+    235,
+    116,
+    1564
+   ],
+   "decoded": "👨‍👩‍👧‍👦 family",
+   "decoded_skip_special": "👨‍👩‍👧‍👦 family",
+   "decoded_each": [
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    "�",
+    " family"
+   ]
+  },
+  {
+   "text": "é vs é",
+   "ids": [
+    85,
+    151,
+    219,
+    6375,
+    26411
+   ],
+   "decoded": "é vs é",
+   "decoded_skip_special": "é vs é",
+   "decoded_each": [
+    "e",
+    "�",
+    "�",
+    " vs",
+    " é"
+   ]
+  },
+  {
+   "text": "ﬁ ligature",
+   "ids": [
+    27141,
+    13042,
+    906
+   ],
+   "decoded": "ﬁ ligature",
+   "decoded_skip_special": "ﬁ ligature",
+   "decoded_each": [
+    "ﬁ",
+    " lig",
+    "ature"
+   ]
+  },
+  {
+   "text": "a​b zero width",
+   "ids": [
+    81,
+    321,
+    229,
+    82,
+    6708,
+    8068
+   ],
+   "decoded": "a​b zero width",
+   "decoded_skip_special": "a​b zero width",
+   "decoded_each": [
+    "a",
+    "�",
+    "�",
+    "b",
+    " zero",
+    " width"
+   ]
+  },
+  {
+   "text": "a b non-breaking",
+   "ids": [
+    81,
+    15442,
+    82,
+    1603,
+    29,
+    11194
+   ],
+   "decoded": "a b non-breaking",
+   "decoded_skip_special": "a b non-breaking",
+   "decoded_each": [
+    "a",
+    " ",
+    "b",
+    " non",
+    "-",
+    "breaking"
+   ]
+  },
+  {
+   "text": "en–dash em—dash",
+   "ids": [
+    264,
+    1494,
+    32641,
+    649,
+    1265,
+    32641
+   ],
+   "decoded": "en–dash em—dash",
+   "decoded_skip_special": "en–dash em—dash",
+   "decoded_each": [
+    "en",
+    "–",
+    "dash",
+    " em",
+    "—",
+    "dash"
+   ]
+  },
+  {
+   "text": "“curly” ‘quotes’",
+   "ids": [
+    1585,
+    1855,
+    318,
+    573,
+    1551,
+    385,
+    2346,
+    417
+   ],
+   "decoded": "“curly” ‘quotes’",
+   "decoded_skip_special": "“curly” ‘quotes’",
+   "decoded_each": [
+    "“",
+    "cur",
+    "ly",
+    "”",
+    " ‘",
+    "qu",
+    "otes",
+    "’"
+   ]
+  },
+  {
+   "text": "½ ¼ ¾ €",
+   "ids": [
+    16738,
+    216,
+    28151,
+    216,
+    43124,
+    24927
+   ],
+   "decoded": "½ ¼ ¾ €",
+   "decoded_skip_special": "½ ¼ ¾ €",
+   "decoded_each": [
+    "½",
+    " ",
+    "¼",
+    " ",
+    "¾",
+    " €"
+   ]
+  },
+  {
+   "text": " line separator",
+   "ids": [
+    321,
+    118,
+    1311,
+    43863
+   ],
+   "decoded": " line separator",
+   "decoded_skip_special": " line separator",
+   "decoded_each": [
+    "�",
+    "�",
+    "line",
+    " separator"
+   ]
+  },
+  {
+   "text": "mixed 中文 and English 123",
+   "ids": [
+    35781,
+    216,
+    28589,
+    29184,
+    284,
+    2321,
+    216,
+    33,
+    34,
+    35
+   ],
+   "decoded": "mixed 中文 and English 123",
+   "decoded_skip_special": "mixed 中文 and English 123",
+   "decoded_each": [
+    "mixed",
+    " ",
+    "中",
+    "文",
+    " and",
+    " English",
+    " ",
+    "1",
+    "2",
+    "3"
+   ]
+  },
+  {
+   "text": "<|im_start|>user\nhi<|im_end|>\n",
+   "ids": [
+    1,
+    4093,
+    198,
+    6004,
+    2,
+    198
+   ],
+   "decoded": "<|im_start|>user\nhi<|im_end|>\n",
+   "decoded_skip_special": "user\nhi\n",
+   "decoded_each": [
+    "<|im_start|>",
+    "user",
+    "\n",
+    "hi",
+    "<|im_end|>",
+    "\n"
+   ]
+  },
+  {
+   "text": "<|endoftext|>",
+   "ids": [
+    0
+   ],
+   "decoded": "<|endoftext|>",
+   "decoded_skip_special": "",
+   "decoded_each": [
+    "<|endoftext|>"
+   ]
+  },
+  {
+   "text": "<|im_end|><|im_end|>",
+   "ids": [
+    2,
+    2
+   ],
+   "decoded": "<|im_end|><|im_end|>",
+   "decoded_skip_special": "",
+   "decoded_each": [
+    "<|im_end|>",
+    "<|im_end|>"
+   ]
+  },
+  {
+   "text": "<|im_start",
+   "ids": [
+    44,
+    108,
+    306,
+    79,
+    3738
+   ],
+   "decoded": "<|im_start",
+   "decoded_skip_special": "<|im_start",
+   "decoded_each": [
+    "<",
+    "|",
+    "im",
+    "_",
+    "start"
+   ]
+  },
+  {
+   "text": "abc<|im_end|>def",
+   "ids": [
+    25276,
+    2,
+    1604
+   ],
+   "decoded": "abc<|im_end|>def",
+   "decoded_skip_special": "abcdef",
+   "decoded_each": [
+    "abc",
+    "<|im_end|>",
+    "def"
+   ]
+  },
+  {
+   "text": " <|im_end|> ",
+   "ids": [
+    216,
+    2,
+    216
+   ],
+   "decoded": " <|im_end|> ",
+   "decoded_skip_special": "  ",
+   "decoded_each": [
+    " ",
+    "<|im_end|>",
+    " "
+   ]
+  },
+  {
+   "text": "<|im_start|>assistant\n<|im_end|>",
+   "ids": [
+    1,
+    520,
+    9531,
+    198,
+    2
+   ],
+   "decoded": "<|im_start|>assistant\n<|im_end|>",
+   "decoded_skip_special": "assistant\n",
+   "decoded_each": [
+    "<|im_start|>",
+    "ass",
+    "istant",
+    "\n",
+    "<|im_end|>"
+   ]
+  }
+ ],
+ "chats": [
+  {
+   "messages": [
+    {
+     "role": "user",
+     "content": "What is the capital of France?"
+    }
+   ],
+   "add_generation_prompt": true,
+   "text": "<|im_start|>system\nYou are a helpful AI assistant named SmolLM, trained by Hugging Face<|im_end|>\n<|im_start|>user\nWhat is the capital of France?<|im_end|>\n<|im_start|>assistant\n"
+  },
+  {
+   "messages": [
+    {
+     "role": "user",
+     "content": "What is the capital of France?"
+    }
+   ],
+   "add_generation_prompt": false,
+   "text": "<|im_start|>system\nYou are a helpful AI assistant named SmolLM, trained by Hugging Face<|im_end|>\n<|im_start|>user\nWhat is the capital of France?<|im_end|>\n"
+  },
+  {
+   "messages": [
+    {
+     "role": "system",
+     "content": "You are a pirate."
+    },
+    {
+     "role": "user",
+     "content": "Hi!"
+    }
+   ],
+   "add_generation_prompt": true,
+   "text": "<|im_start|>system\nYou are a pirate.<|im_end|>\n<|im_start|>user\nHi!<|im_end|>\n<|im_start|>assistant\n"
+  },
+  {
+   "messages": [
+    {
+     "role": "system",
+     "content": "You are a pirate."
+    },
+    {
+     "role": "user",
+     "content": "Hi!"
+    }
+   ],
+   "add_generation_prompt": false,
+   "text": "<|im_start|>system\nYou are a pirate.<|im_end|>\n<|im_start|>user\nHi!<|im_end|>\n"
+  },
+  {
+   "messages": [
+    {
+     "role": "user",
+     "content": "Hi!"
+    },
+    {
+     "role": "assistant",
+     "content": "Hello! How can I help?"
+    },
+    {
+     "role": "user",
+     "content": "Tell me a joke.\nA short one."
+    }
+   ],
+   "add_generation_prompt": true,
+   "text": "<|im_start|>system\nYou are a helpful AI assistant named SmolLM, trained by Hugging Face<|im_end|>\n<|im_start|>user\nHi!<|im_end|>\n<|im_start|>assistant\nHello! How can I help?<|im_end|>\n<|im_start|>user\nTell me a joke.\nA short one.<|im_end|>\n<|im_start|>assistant\n"
+  },
+  {
+   "messages": [
+    {
+     "role": "user",
+     "content": "Hi!"
+    },
+    {
+     "role": "assistant",
+     "content": "Hello! How can I help?"
+    },
+    {
+     "role": "user",
+     "content": "Tell me a joke.\nA short one."
+    }
+   ],
+   "add_generation_prompt": false,
+   "text": "<|im_start|>system\nYou are a helpful AI assistant named SmolLM, trained by Hugging Face<|im_end|>\n<|im_start|>user\nHi!<|im_end|>\n<|im_start|>assistant\nHello! How can I help?<|im_end|>\n<|im_start|>user\nTell me a joke.\nA short one.<|im_end|>\n"
+  }
+ ]
+}

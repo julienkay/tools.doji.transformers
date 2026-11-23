@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "models": [
+    {
+      "id": "julienkay/tiny-random-LlamaForCausalLM-onnx",
+      "revision": "d2dc92c8cfdefb40d8654db50409278551cc0591"
+    },
+    {
+      "id": "julienkay/SmolLM2-135M-Instruct-onnx",
+      "revision": "4d0daaa025676ba7a9b682e2720110cbf7fb021f"
+    }
+  ]
+}

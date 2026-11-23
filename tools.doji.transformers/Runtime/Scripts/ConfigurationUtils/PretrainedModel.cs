@@ -1,116 +1,140 @@
-using System.IO;
 using System;
-using Unity.InferenceEngine;
-using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Unity.InferenceEngine;
 
 namespace Doji.AI.Transformers {
-    public abstract partial class PreTrainedModel : Configurable<PretrainedConfig>, IDisposable {
 
-        public const string MODEL_NAME = "model";
-        public virtual string MainInputName { get; } = "input_ids";
+    /// <summary>
+    /// The base class of the models: a decoder-only language model in one ONNX file, run with Unity Inference Engine.
+    /// </summary>
+    /// <remarks>
+    /// The ONNX model runs both the prompt and each new token, with the inputs and outputs of optimum exports:
+    /// <c>input_ids</c>, <c>attention_mask</c>, <c>position_ids</c> and <c>past_key_values.{i}.key/value</c> in,
+    /// <c>logits</c> and <c>present.{i}.key/value</c> out. tools/causal_lm/make_models.py exports models in this form.
+    /// </remarks>
+    public abstract partial class PreTrainedModel : IDisposable {
 
-        public GenerationConfig GenerationConfig { get; }
-
-        protected bool IsStateful { get; } = false;
-
-        // Flash Attention 2 support
-        protected bool SupportsFlashAttn2 { get; } = false;
-
-        // SDPA support
-        protected bool SupportsSdpa { get; } = false;
-
-        // Has support for a `Cache` instance as `past_key_values`? Does it support a `StaticCache`?
-        protected bool SupportsCacheClass { get; } = false;
-        protected bool SupportsStaticCache { get; } = false;
-
-        // Has support for a `QuantoQuantizedCache` instance as `past_key_values`
-        protected bool SupportsQuantizedCache { get; } = false;
-
-
-        /* In original code these are retrieved by inspecting attributes/arguments
-         t.b.d. if there's a good way to implement this generically without resorting to Reflection */
-        protected abstract bool AcceptsAttentionMask { get; }
-        protected abstract bool HasEncoder { get; }
-        protected virtual object Encoder { get; } = null;
+        public const string MODEL_NAME = "model.onnx";
+        public const string CONFIG_NAME = "config.json";
+        public const string GENERATION_CONFIG_NAME = "generation_config.json";
 
         /// <summary>
-        /// Which <see cref="BackendType"/> to run the model with.
+        /// The Hugging Face repository id the model was loaded from.
         /// </summary>
-        private BackendType Backend { get; set; } = BackendType.GPUCompute;
+        public string ModelId { get; internal set; }
+
+        public PretrainedConfig Config { get; }
 
         /// <summary>
-        /// The runtime model.
+        /// The default settings of <see cref="Generate"/>, from <c>generation_config.json</c>.
         /// </summary>
-        private Model _model;
-        protected Worker _worker;
-        protected Ops _ops;
+        public GenerationConfig GenerationConfig { get; set; }
 
-        public PreTrainedModel(Model model, PretrainedConfig config, GenerationConfig generationConfig = null, BackendType backend = BackendType.GPUCompute) : base(config) {
-            Backend = backend;
-            InitializeNetwork(model);
-            GenerationConfig = generationConfig;
+        private readonly Worker _worker;
+        private readonly int _numKeyValueHeads, _headDim;
+        private readonly int _inputIds, _attentionMask, _positionIds, _logits;
+        private readonly int[] _pastInputs, _presentOutputs;
+
+        protected PreTrainedModel(Model model, PretrainedConfig config, GenerationConfig generationConfig, BackendType backend) {
+            if (model == null) {
+                throw new ArgumentNullException(nameof(model));
+            }
+            Config = config;
+            GenerationConfig = generationConfig ?? new GenerationConfig();
+            _numKeyValueHeads = config.NumKeyValueHeads ?? config.NumAttentionHeads;
+            _headDim = config.HeadDim ?? config.HiddenSize / config.NumAttentionHeads;
+
+            // Inputs and outputs by index, not by name: setting inputs by name fails on quantized models.
+            var inputs = model.inputs.Select(i => i.name).ToList();
+            var outputs = model.outputs.Select(o => o.name).ToList();
+            int Input(string name) => IndexOf(inputs, name, "input");
+            int Output(string name) => IndexOf(outputs, name, "output");
+            _inputIds = Input("input_ids");
+            _attentionMask = Input("attention_mask");
+            _positionIds = Input("position_ids");
+            _logits = Output("logits");
+            int layers = config.NumHiddenLayers;
+            _pastInputs = new int[2 * layers];
+            _presentOutputs = new int[2 * layers];
+            for (int i = 0; i < layers; i++) {
+                _pastInputs[2 * i] = Input($"past_key_values.{i}.key");
+                _pastInputs[2 * i + 1] = Input($"past_key_values.{i}.value");
+                _presentOutputs[2 * i] = Output($"present.{i}.key");
+                _presentOutputs[2 * i + 1] = Output($"present.{i}.value");
+            }
+            _worker = new Worker(model, backend);
         }
 
-        protected virtual void InitializeNetwork(Model model) {
-            if (model == null) {
-                throw new ArgumentException("Model was null", nameof(model));
+        private static int IndexOf(List<string> names, string name, string kind) {
+            int index = names.IndexOf(name);
+            return index >= 0 ? index : throw new ArgumentException(
+                $"The model has no {kind} '{name}'. Export it with tools/causal_lm/make_models.py.");
+        }
+
+        /// <summary>
+        /// Reads the configs and the model of a repository and creates the model class.
+        /// </summary>
+        internal static async Task<T> FromPretrainedAsync<T>(ModelRepository files, BackendType backend,
+            Func<Model, PretrainedConfig, GenerationConfig, BackendType, T> create) where T : PreTrainedModel {
+            var config = await files.ReadJsonAsync<PretrainedConfig>(CONFIG_NAME);
+            // Like transformers' GenerationConfig.from_model_config: config.json has the special token ids too.
+            var generationConfig = GenerationConfig.Deserialize(await files.ReadTextAsync(
+                files.Has(GENERATION_CONFIG_NAME) ? GENERATION_CONFIG_NAME : CONFIG_NAME));
+            var model = await files.LoadModelAsync(MODEL_NAME);
+            T result = create(model, config, generationConfig, backend);
+            result.ModelId = files.ModelId;
+            return result;
+        }
+
+        /// <summary>
+        /// Creates an empty KV cache for this model.
+        /// </summary>
+        public DynamicCache CreateCache() {
+            return new DynamicCache(Config.NumHiddenLayers, _numKeyValueHeads, _headDim);
+        }
+
+        /// <summary>
+        /// Runs <paramref name="inputIds"/> after the tokens in <paramref name="cache"/>, and adds them to the cache.
+        /// </summary>
+        /// <returns>The logits of the last token, which score the next token.</returns>
+        public Task<float[]> ForwardAsync(IReadOnlyList<int> inputIds, DynamicCache cache) => ForwardAsync(inputIds, cache, false);
+
+        /// <inheritdoc cref="ForwardAsync(IReadOnlyList{int}, DynamicCache)"/>
+        public float[] Forward(IReadOnlyList<int> inputIds, DynamicCache cache) => SyncTask.Run(ForwardAsync(inputIds, cache, true));
+
+        internal async Task<float[]> ForwardAsync(IReadOnlyList<int> ids, DynamicCache cache, bool sync) {
+            int past = cache.GetSeqLength();
+            int total = past + ids.Count;
+            using var inputIds = new Tensor<int>(new TensorShape(1, ids.Count), ids.ToArray());
+            using var attentionMask = new Tensor<int>(new TensorShape(1, total), Enumerable.Repeat(1, total).ToArray());
+            using var positionIds = new Tensor<int>(new TensorShape(1, ids.Count), Enumerable.Range(past, ids.Count).ToArray());
+            _worker.SetInput(_inputIds, inputIds);
+            _worker.SetInput(_attentionMask, attentionMask);
+            _worker.SetInput(_positionIds, positionIds);
+            for (int i = 0; i < cache.NumLayers; i++) {
+                _worker.SetInput(_pastInputs[2 * i], cache[i].Key);
+                _worker.SetInput(_pastInputs[2 * i + 1], cache[i].Value);
+            }
+            _worker.Schedule();
+
+            // The worker reuses its outputs on the next run, so the cache keeps copies.
+            for (int i = 0; i < cache.NumLayers; i++) {
+                Tensor key = null, value = null;
+                _worker.CopyOutput(_presentOutputs[2 * i], ref key);
+                _worker.CopyOutput(_presentOutputs[2 * i + 1], ref value);
+                cache.Update((Tensor<float>)key, (Tensor<float>)value, i);
             }
 
-            _model = model;
-            _worker = new Worker(_model, Backend);
-            _ops = new Ops(Backend);
+            var logits = (Tensor<float>)_worker.PeekOutput(_logits);
+            int vocab = logits.shape[-1];
+            using Tensor<float> cpu = sync ? logits.ReadbackAndClone() : await logits.ReadbackAndCloneAsync();
+            return cpu.AsReadOnlySpan()[^vocab..].ToArray();
         }
 
         public virtual void Dispose() {
             _worker?.Dispose();
-            _ops?.Dispose();
-        }
-
-        public abstract ModelOutput Execute(Dictionary<string, Tensor> modelInputs);
-
-        /// <summary>
-        /// Loads a Sentis <see cref="Model"/> from a <see cref="ModelAsset"/> in Resources.
-        /// </summary>
-        /// <param name="path">The path to the model file in the Resources folder</param>
-        private static Model LoadFromModelAsset(string path) {
-            ModelAsset modelAsset = Resources.Load<ModelAsset>(path);
-            if (modelAsset == null) {
-                return null;
-            }
-            Model model = ModelLoader.Load(modelAsset);
-            Resources.UnloadAsset(modelAsset);
-            return model;
-        }
-
-        /// <summary>
-        /// Load a pretrained model either from StreamingAssets (in .sentis format)
-        /// or from a Resources folder (in .onnx format).
-        /// If no config is found null is returned.
-        /// </summary>
-        protected static Model LoadModel(string model) {
-            if (File.Exists(model.StreamingAssetsPathForModel(MODEL_NAME))) {
-                return ModelLoader.Load(model.StreamingAssetsPathForModel(MODEL_NAME));
-            }
-            return LoadFromModelAsset(model.ResourcePathForModel(MODEL_NAME));
-        }
-
-        private static C FromConfig<C>(PretrainedConfig config, Model model, GenerationConfig generationConfig, BackendType backend) where C : PreTrainedModel {
-            try {
-                return (C)Activator.CreateInstance(typeof(C), model, config, generationConfig, backend);
-            } catch (Exception e) {
-                Log.Error($"{e.GetType().Name} when trying to create class of type '{typeof(C).Name}'");
-                throw e;
-            }
-        }
-
-        protected static C FromPretrained<C>(string pretrainedModelNameOrPath, BackendType backend) where C : PreTrainedModel {
-            string configFile = Path.Combine(pretrainedModelNameOrPath, CONFIG_NAME);
-            string generationConfigFile = Path.Combine(pretrainedModelNameOrPath, "generation_config.json");
-            var config = LoadConfig(configFile) ?? throw new FileNotFoundException($"File '{configFile}' not found for: '{typeof(C).Name}'");
-            var model = LoadModel(pretrainedModelNameOrPath) ?? throw new FileNotFoundException($"Model file for '{pretrainedModelNameOrPath}' not found for: '{typeof(C).Name}'");
-            var generationConfig = Load<GenerationConfig>(generationConfigFile);
-            return FromConfig<C>(config, model, generationConfig, backend);
         }
     }
 }

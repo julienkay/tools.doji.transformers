@@ -1,202 +1,191 @@
-using System.Collections.Generic;
 using System;
-using Unity.InferenceEngine;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Doji.AI.Transformers {
+
     /// <summary>
-    /// Abstract base class for all logit processors that can be applied during generation.
+    /// Changes the scores of the next token during generation, as transformers' logits processors do.
     /// </summary>
+    /// <remarks>
+    /// This package generates one sequence at a time, so a processor gets the ids so far and
+    /// the scores of the next token, and changes the scores in place.
+    /// </remarks>
     public abstract class LogitsProcessor {
-        public abstract Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores);
-    }
-    public class MinLengthLogitsProcessor : LogitsProcessor {
-        public MinLengthLogitsProcessor(int minLength, object eosTokenTensor) { }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
+
+        /// <param name="inputIds">The prompt and the tokens generated so far.</param>
+        /// <param name="scores">The scores of each vocabulary token for the next position.</param>
+        public abstract void Process(IReadOnlyList<int> inputIds, float[] scores);
     }
 
+    /// <summary>
+    /// Makes repeated tokens less likely: divides positive scores of tokens in <c>inputIds</c> by the penalty and
+    /// multiplies negative ones.
+    /// </summary>
+    public class RepetitionPenaltyLogitsProcessor : LogitsProcessor {
+
+        public float Penalty { get; }
+
+        public RepetitionPenaltyLogitsProcessor(float penalty) {
+            if (penalty <= 0) {
+                throw new ArgumentException($"`penalty` has to be a strictly positive float, but is {penalty}");
+            }
+            Penalty = penalty;
+        }
+
+        public override void Process(IReadOnlyList<int> inputIds, float[] scores) {
+            foreach (int id in inputIds.Distinct()) {
+                scores[id] = scores[id] < 0 ? scores[id] * Penalty : scores[id] / Penalty;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Prevents the end-of-sequence tokens until <see cref="MinNewTokens"/> tokens are generated.
+    /// </summary>
     public class MinNewTokensLengthLogitsProcessor : LogitsProcessor {
-        public MinNewTokensLengthLogitsProcessor(int inputIdsSeqLength, int minNewTokens, object eosTokenTensor) { }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
+
+        public int PromptLength { get; }
+        public int MinNewTokens { get; }
+        public int[] EosTokenId { get; }
+
+        public MinNewTokensLengthLogitsProcessor(int promptLength, int minNewTokens, int[] eosTokenId) {
+            PromptLength = promptLength;
+            MinNewTokens = minNewTokens;
+            EosTokenId = eosTokenId;
+        }
+
+        public override void Process(IReadOnlyList<int> inputIds, float[] scores) {
+            if (inputIds.Count - PromptLength < MinNewTokens) {
+                foreach (int id in EosTokenId) {
+                    scores[id] = float.NegativeInfinity;
+                }
+            }
+        }
     }
 
+    /// <summary>
+    /// Divides the scores by the temperature: below 1 sharpens the distribution, above 1 flattens it.
+    /// </summary>
     public class TemperatureLogitsWarper : LogitsProcessor {
+
         public float Temperature { get; }
+
         public TemperatureLogitsWarper(float temperature) {
+            if (temperature <= 0) {
+                throw new ArgumentException($"`temperature` has to be a strictly positive float, but is {temperature}. " +
+                    "For greedy decoding, set `do_sample` to false.");
+            }
             Temperature = temperature;
         }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
+
+        public override void Process(IReadOnlyList<int> inputIds, float[] scores) {
+            for (int i = 0; i < scores.Length; i++) {
+                scores[i] /= Temperature;
+            }
+        }
     }
 
-    public class RepetitionPenaltyLogitsProcessor : LogitsProcessor {
-        public RepetitionPenaltyLogitsProcessor(float penalty) { }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
+    /// <summary>
+    /// Keeps the <see cref="TopK"/> highest scores and sets the others to minus infinity.
+    /// </summary>
+    public class TopKLogitsWarper : LogitsProcessor {
+
+        public int TopK { get; }
+
+        public TopKLogitsWarper(int topK, int minTokensToKeep = 1) {
+            if (topK <= 0) {
+                throw new ArgumentException($"`top_k` has to be a strictly positive integer, but is {topK}");
+            }
+            TopK = Math.Max(topK, minTokensToKeep);
+        }
+
+        public override void Process(IReadOnlyList<int> inputIds, float[] scores) {
+            if (TopK >= scores.Length) {
+                return;
+            }
+            float[] sorted = (float[])scores.Clone();
+            Array.Sort(sorted);
+            float threshold = sorted[^TopK];
+            for (int i = 0; i < scores.Length; i++) {
+                if (scores[i] < threshold) {
+                    scores[i] = float.NegativeInfinity;
+                }
+            }
+        }
     }
 
-    public class EncoderRepetitionPenaltyLogitsProcessor : LogitsProcessor {
-        public EncoderRepetitionPenaltyLogitsProcessor(float penalty, object encoderInputIds) { }
-
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
+    /// <summary>
+    /// Keeps the smallest set of most likely tokens whose probabilities add up to <see cref="TopP"/> (nucleus sampling).
+    /// </summary>
     public class TopPLogitsWarper : LogitsProcessor {
+
         public float TopP { get; }
         public int MinTokensToKeep { get; }
-        public TopPLogitsWarper(float topP, int minTokensToKeep) {
+
+        public TopPLogitsWarper(float topP, int minTokensToKeep = 1) {
+            if (topP < 0 || topP > 1) {
+                throw new ArgumentException($"`top_p` has to be a float > 0 and < 1, but is {topP}");
+            }
             TopP = topP;
             MinTokensToKeep = minTokensToKeep;
         }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
 
-    public class TopKLogitsWarper : LogitsProcessor {
-        public int TopK { get; }
-        public int MinTokensToKeep { get; }
-        public TopKLogitsWarper(int topK, int minTokensToKeep) {
-            TopK = topK;
-            MinTokensToKeep = minTokensToKeep;
+        public override void Process(IReadOnlyList<int> inputIds, float[] scores) {
+            float[] probabilities = Softmax(scores);
+            int[] order = Enumerable.Range(0, scores.Length).ToArray();
+            Array.Sort(probabilities.Select(p => -p).ToArray(), order);
+            double cumulative = 0;
+            for (int rank = 0; rank < order.Length; rank++) {
+                // Remove a token when the more likely tokens already reach top_p.
+                if (rank >= MinTokensToKeep && cumulative >= TopP) {
+                    scores[order[rank]] = float.NegativeInfinity;
+                }
+                cumulative += probabilities[order[rank]];
+            }
         }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
+
+        internal static float[] Softmax(float[] scores) {
+            float max = scores.Max();
+            var probabilities = new float[scores.Length];
+            double sum = 0;
+            for (int i = 0; i < scores.Length; i++) {
+                probabilities[i] = MathF.Exp(scores[i] - max);
+                sum += probabilities[i];
+            }
+            for (int i = 0; i < scores.Length; i++) {
+                probabilities[i] = (float)(probabilities[i] / sum);
+            }
+            return probabilities;
+        }
     }
 
+    /// <summary>
+    /// Keeps the tokens whose probability is at least <see cref="MinP"/> times the probability of the most likely token.
+    /// </summary>
     public class MinPLogitsWarper : LogitsProcessor {
+
         public float MinP { get; }
         public int MinTokensToKeep { get; }
-        public MinPLogitsWarper(float minP, int minTokensToKeep) {
+
+        public MinPLogitsWarper(float minP, int minTokensToKeep = 1) {
+            if (minP < 0 || minP > 1) {
+                throw new ArgumentException($"`min_p` has to be a float >= 0 and <= 1, but is {minP}");
+            }
             MinP = minP;
             MinTokensToKeep = minTokensToKeep;
         }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
 
-    public class TypicalLogitsWarper : LogitsProcessor {
-        public float TypicalP { get; }
-        public int MinTokensToKeep { get; }
-        public TypicalLogitsWarper(float typicalP, int minTokensToKeep) {
-            TypicalP = typicalP;
-            MinTokensToKeep = minTokensToKeep;
+        public override void Process(IReadOnlyList<int> inputIds, float[] scores) {
+            float[] probabilities = TopPLogitsWarper.Softmax(scores);
+            float threshold = MinP * probabilities.Max();
+            int[] order = Enumerable.Range(0, scores.Length).ToArray();
+            Array.Sort(probabilities.Select(p => -p).ToArray(), order);
+            for (int rank = MinTokensToKeep; rank < order.Length; rank++) {
+                if (probabilities[order[rank]] < threshold) {
+                    scores[order[rank]] = float.NegativeInfinity;
+                }
+            }
         }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class EpsilonLogitsWarper : LogitsProcessor {
-        public float EpsilonCutoff { get; }
-        public int MinTokensToKeep { get; }
-        public EpsilonLogitsWarper(float epsilonCutoff, int minTokensToKeep) {
-            EpsilonCutoff = epsilonCutoff;
-            MinTokensToKeep = minTokensToKeep;
-        }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class EtaLogitsWarper : LogitsProcessor {
-        public float EtaCutoff { get; }
-        public int MinTokensToKeep { get; }
-        public EtaLogitsWarper(float etaCutoff, int minTokensToKeep) {
-            EtaCutoff = etaCutoff;
-            MinTokensToKeep = minTokensToKeep;
-        }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class NoRepeatNGramLogitsProcessor : LogitsProcessor {
-        public NoRepeatNGramLogitsProcessor(int noRepeatNGramSize) { }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class EncoderNoRepeatNGramLogitsProcessor : LogitsProcessor {
-        public EncoderNoRepeatNGramLogitsProcessor(int encoderNoRepeatNGramSize, object encoderInputIds) { }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class SequenceBiasLogitsProcessor : LogitsProcessor {
-        public SequenceBiasLogitsProcessor(object sequenceBias) { }
-
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class NoBadWordsLogitsProcessor : LogitsProcessor {
-        public NoBadWordsLogitsProcessor(List<List<int>> badWordsIds, object eosTokenTensor) { }
-
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class PrefixConstrainedLogitsProcessor : LogitsProcessor {
-        public PrefixConstrainedLogitsProcessor(Func<int, List<int>> prefixAllowedTokensFn, int numBeams) { }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class HammingDiversityLogitsProcessor : LogitsProcessor {
-        public HammingDiversityLogitsProcessor(float diversityPenalty, int numBeams, int numBeamGroups) { }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class ForcedBOSTokenLogitsProcessor : LogitsProcessor {
-        public ForcedBOSTokenLogitsProcessor(int forcedBosTokenId) { }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class ForcedEOSTokenLogitsProcessor : LogitsProcessor {
-        public ForcedEOSTokenLogitsProcessor(int maxLength, int forcedEosTokenId) { }
-
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class InfNanRemoveLogitsProcessor : LogitsProcessor {
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class ExponentialDecayLengthPenalty : LogitsProcessor {
-        public ExponentialDecayLengthPenalty((int startIndex, float decayFactor)? exponentialDecayLengthPenalty, object eosTokenTensor, int inputIdsSeqLength) { }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class LogitNormalization : LogitsProcessor {
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class SuppressTokensAtBeginLogitsProcessor : LogitsProcessor {
-        public SuppressTokensAtBeginLogitsProcessor(List<int> beginSuppressTokens, int beginIndex) { }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class SuppressTokensLogitsProcessor : LogitsProcessor {
-        public SuppressTokensLogitsProcessor(List<int> suppressTokens) { }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class ForceTokensLogitsProcessor : LogitsProcessor {
-        public ForceTokensLogitsProcessor(List<List<int>> forcedDecoderIds, bool hasWarned) { }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class WhisperTimeStampLogitsProcessor : LogitsProcessor {
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class WhisperNoSpeechDetection : LogitsProcessor {
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class IfierFreeGuidanceLogitsProcessor : LogitsProcessor {
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class AlternatingCodebooksLogitsProcessor : LogitsProcessor {
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class UnbatchedClassifierFreeGuidanceLogitsProcessor : LogitsProcessor {
-        public UnbatchedClassifierFreeGuidanceLogitsProcessor(float guidanceScale, object self, object unconditionalIds, object unconditionalAttentionMask, bool useCache) { }
-
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class BarkEosPrioritizerLogitsProcessor : LogitsProcessor {
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
-    }
-
-    public class WatermarkLogitsProcessor : LogitsProcessor {
-        public WatermarkLogitsProcessor(int vocabSize, float greenlistRatio, float bias, int hashingKey, string seedingScheme, int contextWidth) { }
-        public override Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) { throw new NotImplementedException(); }
     }
 }

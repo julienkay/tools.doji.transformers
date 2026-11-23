@@ -1,36 +1,24 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using Unity.InferenceEngine;
 
 namespace Doji.AI.Transformers {
 
-    public abstract class Cache : IEnumerable<(Tensor Key, Tensor Value)> {
-
-        internal Ops Ops { get; set; }
-        public int? MaxBatchSize { get; private set; }
-        public int? MaxCacheLen { get; private set; }
-
-        public virtual void Reset() { }
+    /// <summary>
+    /// The keys and values of the attention layers for the tokens seen so far, so that each step of generation only
+    /// runs the new tokens.
+    /// </summary>
+    public abstract class Cache : IDisposable {
 
         /// <summary>
-        /// Returns the sequence length of the cached states."
+        /// The number of cached tokens.
         /// </summary>
-        public virtual int GetSeqLength(int? layerIdx = 0) {
-            throw new NotImplementedException($"Make sure to implement {nameof(GetSeqLength)} in subclass '{GetType()}'.");
-        }
+        public abstract int GetSeqLength(int layerIdx = 0);
 
         /// <summary>
-        /// Updates the cache with the new <paramref name="keyStates"/> and <paramref name="valueStates"/> for the layer <paramref name="layerIdx"/>.
+        /// The cached keys and values of a layer, shaped [batch, kv_heads, tokens, head_dim].
         /// </summary>
-        public abstract void Update(Tensor keyStates, Tensor valueStates, int layerIdx);
+        public abstract (Tensor<float> Key, Tensor<float> Value) this[int layerIdx] { get; }
 
-        public abstract (Tensor Key, Tensor Value) this[int index] { get; }
-
-        public abstract IEnumerator<(Tensor Key, Tensor Value)> GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() {
-            return GetEnumerator();
-        }
+        public abstract void Dispose();
     }
 }

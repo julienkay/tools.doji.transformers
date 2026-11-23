@@ -1,13 +1,16 @@
 using System.Collections.Generic;
-using Unity.InferenceEngine;
 
 namespace Doji.AI.Transformers {
+
+    /// <summary>
+    /// Applies a list of <see cref="LogitsProcessor"/>s in order.
+    /// </summary>
     public class LogitsProcessorList : List<LogitsProcessor> {
-        public Tensor<float> Apply(Tensor<int> inputIds, Tensor<float> scores) {
-            foreach (var processor in this) {
-                scores = processor.Apply(inputIds, scores);
+
+        public void Process(IReadOnlyList<int> inputIds, float[] scores) {
+            foreach (LogitsProcessor processor in this) {
+                processor.Process(inputIds, scores);
             }
-            return scores;
         }
     }
 }
