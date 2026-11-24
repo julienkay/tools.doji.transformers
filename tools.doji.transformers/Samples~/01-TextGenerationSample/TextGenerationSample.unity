@@ -165,7 +165,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ModelIds:
+  - julienkay/SmolLM2-360M-Instruct-onnx
   - julienkay/SmolLM2-135M-Instruct-onnx
+  - julienkay/Phi-3-mini-4k-instruct-onnx
   MaxNewTokens: 256
   DoSample: 1
   Temperature: 0.2

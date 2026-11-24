@@ -21,7 +21,7 @@
   "samples": [
     {
       "displayName": "Text Generation Sample",
-      "description": "A simple chat with a small language model (SmolLM2-135M-Instruct). AI Model Hub downloads the model after the import.",
+      "description": "A chat with a small language model: SmolLM2-360M-Instruct or SmolLM2-135M-Instruct, and Phi-3-mini as an option. AI Model Hub downloads the models after the import.",
       "path": "Samples~/01-TextGenerationSample"
     }
   ]

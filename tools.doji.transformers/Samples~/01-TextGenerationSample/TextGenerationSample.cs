@@ -15,9 +15,14 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
     [RequireComponent(typeof(UIDocument))]
     public class TextGenerationSample : MonoBehaviour {
 
-        /// <summary>The models to choose from. Each must be listed in an AI Model Hub manifest.</summary>
+        /// <summary>
+        /// The models to choose from. Each must be listed in an AI Model Hub manifest. Phi-3-mini is optional there:
+        /// turn it on in AI Model Hub to download it.
+        /// </summary>
         public string[] ModelIds = {
+            "julienkay/SmolLM2-360M-Instruct-onnx",
             "julienkay/SmolLM2-135M-Instruct-onnx",
+            "julienkay/Phi-3-mini-4k-instruct-onnx",
         };
         public int MaxNewTokens = 256;
 
@@ -158,7 +163,7 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
                 return;
             } catch (Exception e) {
                 Debug.LogException(e);
-                SetStatus($"Could not load {DisplayName(modelId)}. See the Console.");
+                SetStatus($"Could not load {DisplayName(modelId)}. Check that AI Model Hub downloaded it, and see the Console.");
             }
             _loading = false;
             UpdateControls();
