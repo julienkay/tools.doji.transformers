@@ -22,9 +22,13 @@ namespace Doji.AI.Transformers {
         /// </summary>
         public double MaxMillisecondsPerFrame { get; }
 
+        /// <summary>Whether one step can take several frames.</summary>
+        public bool SpreadStepsOverFrames { get; }
+
         public StepPacer(GenerationPacing pacing) {
             _maxStepsPerFrame = pacing.MaxStepsPerFrame;
             MaxMillisecondsPerFrame = pacing.MaxMillisecondsPerFrame;
+            SpreadStepsOverFrames = pacing.SpreadStepsOverFrames;
         }
 
         /// <summary>The frames from the request of a readback to its data, when the GPU keeps up.</summary>

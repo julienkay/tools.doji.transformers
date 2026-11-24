@@ -29,7 +29,10 @@ With the sampling on the GPU, the token that a step picks stays on the GPU as th
 - `GenerationPacing.MaxMillisecondsPerFrame` (default 4) caps the main-thread time for scheduling steps in a frame. The first step of a frame is always scheduled. For a small model, scheduling on the CPU (Inference Engine's per-layer dispatch) is the limit, not the GPU, so this budget sets the speed.
 - `GenerationPacing.MaxStepsPerFrame` (default 32) caps the steps per frame.
 - The in-flight window is `StepsPerFrame * (ReadbackFrames + 1)`, at least 4: a readback takes about 3 frames.
-- A model whose one step takes longer than a frame runs one step per frame, and the frames get longer. Spreading the layers of one step across frames would keep them short. Inference Engine's `Worker.ScheduleIterable` executes the command buffer after every layer, which costs more than it saves, so that needs a variant in `tools.doji.sentis-utils` that executes once per group of layers.
+- A model whose one step takes longer than a frame runs one step per frame by default, and the frames get longer.
+- `GenerationPacing.SpreadStepsOverFrames` spreads each step over frames instead: `RunInParts` schedules the layers of a step with `ScheduleInParts` of `tools.doji.sentis-utils`, and a part ends when the frame's `MaxMillisecondsPerFrame` is used. The sampler runs in the frame that finishes the step. `ScheduleInParts` puts the worker on an external command buffer, which it executes once per part, not after every layer. So on the GPU backend the model owns a `CommandBuffer` from the start, and `Run` executes it after each full run.
+- The budget is main-thread time, and the GPU work of a part follows the CPU time only roughly. For a model whose GPU time per step is much larger than its CPU time, a part can still carry more GPU work than a frame. A smaller budget helps there.
+- If generation stops (a stopping criterion, or cancellation) while a step is spread, the step's enumerator is disposed and the cache is thrown away. The next run of the worker starts fresh.
 - `GenerationPacing` has no counterpart in transformers. It changes when the tokens come, not which tokens.
 
 ## Differences from the CPU processors

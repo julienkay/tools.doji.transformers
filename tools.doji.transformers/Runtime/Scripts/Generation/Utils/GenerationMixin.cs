@@ -97,6 +97,7 @@ namespace Doji.AI.Transformers {
             int maxNewTokens = maxLength - ids.Count;
             var cache = CreateCache();
             var pending = new Queue<(Task<int> token, int frame)>();
+            System.Collections.IEnumerator step = null;
             try {
                 if (maxNewTokens <= 0) {
                     return ids.ToArray();
@@ -121,15 +122,33 @@ namespace Doji.AI.Transformers {
                 Sample(logits);
                 var pacer = sync ? null : new StepPacer(Pacing);
                 var clock = new System.Diagnostics.Stopwatch();
+                bool FrameBudgetUsed() => clock.Elapsed.TotalMilliseconds >= pacer.MaxMillisecondsPerFrame;
                 while (true) {
                     cancellationToken.ThrowIfCancellationRequested();
                     int steps = 0;
                     clock.Restart();
                     int stepsPerFrame = pacer?.StepsPerFrame ?? 1;
                     int inFlight = pacer?.InFlight ?? 1;
-                    while (steps < stepsPerFrame && sampled < maxNewTokens && pending.Count < inFlight
-                        && (steps == 0 || clock.Elapsed.TotalMilliseconds < pacer.MaxMillisecondsPerFrame)) {
-                        Run(_sampler.Token, cache);
+                    while (true) {
+                        if (step == null) {
+                            bool start = steps < stepsPerFrame && sampled < maxNewTokens && pending.Count < inFlight
+                                && (steps == 0 || !FrameBudgetUsed());
+                            if (!start) {
+                                break;
+                            }
+                            if (pacer == null || !pacer.SpreadStepsOverFrames) {
+                                Run(_sampler.Token, cache);
+                                Sample((Tensor<float>)_worker.PeekOutput(_logits));
+                                steps++;
+                                continue;
+                            }
+                            step = RunInParts(_sampler.Token, cache, FrameBudgetUsed);
+                        }
+                        // A step spread over frames: schedule its layers until the frame budget is used.
+                        if (step.MoveNext()) {
+                            break;
+                        }
+                        step = null;
                         Sample((Tensor<float>)_worker.PeekOutput(_logits));
                         steps++;
                     }
@@ -153,6 +172,8 @@ namespace Doji.AI.Transformers {
                     }
                 }
             } finally {
+                // A step still spread over frames: its inputs are freed, and the cache is thrown away.
+                (step as IDisposable)?.Dispose();
                 cache.Dispose();
                 streamer?.End();
             }

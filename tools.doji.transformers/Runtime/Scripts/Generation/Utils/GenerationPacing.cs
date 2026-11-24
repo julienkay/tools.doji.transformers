@@ -25,12 +25,21 @@ namespace Doji.AI.Transformers {
         }
 
         /// <summary>
-        /// The most main-thread time per frame, in milliseconds, for scheduling decode steps. A frame always
-        /// schedules one step, even when that step takes longer.
+        /// The most main-thread time per frame, in milliseconds, for scheduling decode steps. Unless
+        /// <see cref="SpreadStepsOverFrames"/> is true, a frame always schedules one step, even when that step takes
+        /// longer.
         /// </summary>
         public float MaxMillisecondsPerFrame {
             get => _maxMillisecondsPerFrame;
             set => _maxMillisecondsPerFrame = value > 0 ? value : throw new ArgumentOutOfRangeException(nameof(value), "Must be more than 0.");
         }
+
+        /// <summary>
+        /// Whether one decode step can take several frames. When true, a frame schedules the layers of a step only
+        /// until <see cref="MaxMillisecondsPerFrame"/> has passed, and the step goes on in the next frame. This keeps
+        /// the frames short with a model whose one step takes longer than a frame, at the cost of fewer tokens per
+        /// second. When false (the default), a frame always schedules at least one whole step.
+        /// </summary>
+        public bool SpreadStepsOverFrames { get; set; }
     }
 }

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.InferenceEngine;
+using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Doji.AI.Transformers {
 
@@ -38,6 +40,12 @@ namespace Doji.AI.Transformers {
         public GenerationConfig GenerationConfig { get; set; }
 
         private readonly Worker _worker;
+
+        /// <summary>
+        /// On <see cref="BackendType.GPUCompute"/>, the command buffer the worker records into. <see cref="Run(Tensor{int}, DynamicCache)"/>
+        /// executes it after each run, and <see cref="RunInParts"/> after each part. Null on the CPU backend.
+        /// </summary>
+        private readonly CommandBuffer _commandBuffer;
         private readonly int _numKeyValueHeads, _headDim;
         private readonly int _inputIds, _attentionMask, _positionIds, _logits;
         private readonly int[] _pastInputs, _presentOutputs;
@@ -51,6 +59,7 @@ namespace Doji.AI.Transformers {
             // A uint8 embedding table otherwise dequantizes as a whole on every step.
             QuantizedGather.Fuse(model);
             _worker = WorkerUtils.CreateWorkerWithWeightsOnGpu(model, backend);
+            _commandBuffer = CreateCommandBuffer(backend);
         }
 
         /// <summary>
@@ -76,6 +85,11 @@ namespace Doji.AI.Transformers {
                 CacheDataType = DataType.Short;
             }
             _worker = file.CreateWorker(backend);
+            _commandBuffer = CreateCommandBuffer(backend);
+        }
+
+        private static CommandBuffer CreateCommandBuffer(BackendType backend) {
+            return backend == BackendType.GPUCompute ? new CommandBuffer { name = "Doji.Transformers" } : null;
         }
 
         /// <summary>
@@ -191,11 +205,66 @@ namespace Doji.AI.Transformers {
         /// <param name="inputIds">The token ids, shape (1, tokens). They can be on the GPU, for example the token
         /// that <see cref="GpuSampler"/> picked.</param>
         private void Run(Tensor<int> inputIds, DynamicCache cache) {
+            var (attentionMask, positionIds) = SetInputs(inputIds, cache);
+            try {
+                if (_commandBuffer != null) {
+                    _commandBuffer.ScheduleWorker(_worker);
+                    Graphics.ExecuteCommandBuffer(_commandBuffer);
+                    _commandBuffer.Clear();
+                } else {
+                    _worker.Schedule();
+                }
+            } catch {
+                cache.Clear();
+                throw;
+            } finally {
+                attentionMask.Dispose();
+                positionIds.Dispose();
+            }
+            TakePresent(cache);
+        }
+
+        /// <summary>
+        /// Schedules one run of the model as <see cref="Run(Tensor{int}, DynamicCache)"/> does, in parts: each
+        /// <c>MoveNext</c> schedules layers until <paramref name="endPart"/> returns true. The run is done, and the
+        /// cache has the new keys and values, when <c>MoveNext</c> returns false.
+        /// </summary>
+        private System.Collections.IEnumerator RunInParts(Tensor<int> inputIds, DynamicCache cache, Func<bool> endPart) {
+            var (attentionMask, positionIds) = SetInputs(inputIds, cache);
+            System.Collections.IEnumerator schedule = null;
+            try {
+                schedule = _commandBuffer.ScheduleInParts(_worker, endPart);
+                while (true) {
+                    bool more;
+                    try {
+                        more = schedule.MoveNext();
+                    } catch {
+                        cache.Clear();
+                        throw;
+                    }
+                    if (!more) {
+                        break;
+                    }
+                    yield return null;
+                }
+            } finally {
+                (schedule as IDisposable)?.Dispose();
+                attentionMask.Dispose();
+                positionIds.Dispose();
+            }
+            TakePresent(cache);
+        }
+
+        /// <summary>
+        /// Sets the inputs of one run, and gives the keys and values of the cache to the worker.
+        /// </summary>
+        /// <returns>The attention mask and position ids, to dispose after the run is scheduled.</returns>
+        private (Tensor<int>, Tensor<int>) SetInputs(Tensor<int> inputIds, DynamicCache cache) {
             int count = inputIds.shape[1];
             int past = cache.GetSeqLength();
             int total = past + count;
-            using var attentionMask = new Tensor<int>(new TensorShape(1, total), Enumerable.Repeat(1, total).ToArray());
-            using var positionIds = new Tensor<int>(new TensorShape(1, count), Enumerable.Range(past, count).ToArray());
+            var attentionMask = new Tensor<int>(new TensorShape(1, total), Enumerable.Repeat(1, total).ToArray());
+            var positionIds = new Tensor<int>(new TensorShape(1, count), Enumerable.Range(past, count).ToArray());
             _worker.SetInput(_inputIds, inputIds);
             _worker.SetInput(_attentionMask, attentionMask);
             _worker.SetInput(_positionIds, positionIds);
@@ -207,12 +276,13 @@ namespace Doji.AI.Transformers {
                     cache.Forget(i);
                 }
             }
-            try {
-                _worker.Schedule();
-            } catch {
-                cache.Clear();
-                throw;
-            }
+            return (attentionMask, positionIds);
+        }
+
+        /// <summary>
+        /// Takes the new keys and values of a run from the worker into the cache.
+        /// </summary>
+        private void TakePresent(DynamicCache cache) {
             for (int i = 0; i < cache.NumLayers; i++) {
                 cache.Update(_worker.TakeOutput(_presentOutputs[2 * i]), _worker.TakeOutput(_presentOutputs[2 * i + 1]), i);
             }
@@ -222,6 +292,7 @@ namespace Doji.AI.Transformers {
             _sampler?.Dispose();
             _sampler = null;
             _worker?.Dispose();
+            _commandBuffer?.Release();
         }
     }
 }

@@ -82,6 +82,15 @@ A small model runs several steps per frame. `PreTrainedModel.Pacing` caps the ma
 | 8 | 153 tokens/s, 16.7 ms/frame | 170 tokens/s, 16.7 ms/frame |
 | 16 | 181 tokens/s, 18.2 ms/frame | 353 tokens/s, 17.5 ms/frame |
 
+With `SpreadStepsOverFrames`, a step that takes longer than a frame goes on in the next frames. 64 greedy tokens, vSync on, mean frame time:
+
+| Model | Default pacing<br>D3D12 / D3D11 | Spread, 4 ms<br>D3D12 / D3D11 | Spread, 8 ms<br>D3D12 / D3D11 |
+|---|---|---|---|
+| SmolLM2-135M-Instruct-sentis-float16 | 29 / 41 tokens/s, 35 / 25 ms/frame | 8.5 / 8.4 tokens/s, 16.9 / 16.7 ms/frame | 19.0 / 18.1 tokens/s, 16.9 / 16.7 ms/frame |
+| SmolLM2-1.7B-Instruct-sentis-float16 | 12.7 / 11.1 tokens/s, 78 / 90 ms/frame | 12.5 / 10.4 tokens/s, 18.1 / 19.1 ms/frame | 12.0 / 10.1 tokens/s, 27.6 / 31.6 ms/frame |
+
+The budget is main-thread time. SmolLM2-1.7B does much more GPU work per step than CPU work, so its parts of 8 ms carry more GPU work than a frame.
+
 Long prompts with Phi-3-mini-4k-instruct-sentis-float16, 4 new tokens after the prompt:
 
 | Prompt | D3D12 | D3D11 |
