@@ -16,11 +16,12 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
     public class TextGenerationSample : MonoBehaviour {
 
         /// <summary>
-        /// The models to choose from. Each must be listed in an AI Model Hub manifest. Phi-3-mini is optional there:
-        /// turn it on in AI Model Hub to download it.
+        /// The models to choose from. Each must be listed in an AI Model Hub manifest. SmolLM2-1.7B and Phi-3-mini
+        /// are optional there: turn them on in AI Model Hub to download them.
         /// </summary>
         public string[] ModelIds = {
             "julienkay/SmolLM2-360M-Instruct-onnx",
+            "julienkay/SmolLM2-1.7B-Instruct-onnx",
             "julienkay/SmolLM2-135M-Instruct-onnx",
             "julienkay/Phi-3-mini-4k-instruct-onnx",
         };

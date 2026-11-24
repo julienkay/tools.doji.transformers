@@ -17,11 +17,140 @@ MonoBehaviour:
   - <Id>k__BackingField: julienkay/SmolLM2-360M-Instruct-onnx
     <Revision>k__BackingField: e12fa8bc819e071bc606c8b91e2c2966464bcb08
     <Optional>k__BackingField: 0
-    <Files>k__BackingField: []
+    <Files>k__BackingField:
+    - <Path>k__BackingField: config.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: generation_config.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: tokenizer.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: tokenizer_config.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: special_tokens_map.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: vocab.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: merges.txt
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: model.onnx
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: float16
+      <InputShapes>k__BackingField: []
+  - <Id>k__BackingField: julienkay/SmolLM2-1.7B-Instruct-onnx
+    <Revision>k__BackingField: 24e9d96fa86a7bada01ae2763b2df1318ca47397
+    <Optional>k__BackingField: 1
+    <Files>k__BackingField:
+    - <Path>k__BackingField: config.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: generation_config.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: tokenizer.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: tokenizer_config.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: special_tokens_map.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: vocab.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: merges.txt
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: model.onnx
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: float16
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: model.onnx_data
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
   - <Id>k__BackingField: julienkay/SmolLM2-135M-Instruct-onnx
     <Revision>k__BackingField: 4d0daaa025676ba7a9b682e2720110cbf7fb021f
     <Optional>k__BackingField: 0
-    <Files>k__BackingField: []
+    <Files>k__BackingField:
+    - <Path>k__BackingField: config.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: generation_config.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: tokenizer.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: tokenizer_config.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: special_tokens_map.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: vocab.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: merges.txt
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: model.onnx
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: float16
+      <InputShapes>k__BackingField: []
   - <Id>k__BackingField: julienkay/Phi-3-mini-4k-instruct-onnx
     <Revision>k__BackingField: d54f3876addc7e569ea04f72c3466aad495fd045
     <Optional>k__BackingField: 1

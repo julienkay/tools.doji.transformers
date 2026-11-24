@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `Qwen2Tokenizer`, and truncation, padding, pairs and batches as transformers v5 does them.
 - `ApplyChatTemplate` for ChatML and Phi-3 chat templates.
 - `AutoTokenizer.FromPretrainedAsync`, which picks the tokenizer class from the model type and the tokenizer config as transformers v5 does.
-- A text generation sample: a chat with SmolLM2-360M-Instruct or SmolLM2-135M-Instruct, which replaces the Phi-3 sample. Phi-3-mini is an optional model of the sample: turn it on in AI Model Hub to download it (3.8 GB after the uint8 conversion). The sample ships a Model Hub manifest asset, so Model Hub downloads the models after the import. Its UI is a UI Toolkit document: chat bubbles that stream the reply, a Stop button, and the sampling settings of the model card. It works with any render pipeline.
+- A text generation sample: a chat with SmolLM2-360M-Instruct or SmolLM2-135M-Instruct, which replaces the Phi-3 sample. SmolLM2-1.7B-Instruct and Phi-3-mini are optional models of the sample: turn them on in AI Model Hub to download them. Model Hub converts the SmolLM2 models to float16, which gives the answers of float32 at half the memory, and Phi-3-mini to uint8 (3.8 GB). The sample ships a Model Hub manifest asset, so Model Hub downloads the models after the import. Its UI is a UI Toolkit document: chat bubbles that stream the reply, a Stop button, and the sampling settings of the model card. It works with any render pipeline.
 - Tests that compare a tiny random Llama model with onnxruntime and transformers, and the tokenizers with the official ones on many edge cases.
 
 ### Changed
