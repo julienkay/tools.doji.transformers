@@ -52,6 +52,22 @@ To try it, import the **Text Generation Sample** from the Package Manager and op
 
 The models are plain ONNX exports with the input and output names of optimum (`input_ids`, `attention_mask`, `position_ids`, `past_key_values.*`). `tools/causal_lm/make_models.py` exports a transformers model this way.
 
+### Performance
+
+Rough numbers for greedy generation on the GPU (`BackendType.GPUCompute`), in Play mode with one frame after each token, as the sample runs. Each model generates 64 tokens after a short chat prompt.
+
+| Model | Tokens/s | Peak VRAM | Peak RAM |
+|---|---|---|---|
+| [SmolLM2-135M-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-135M-Instruct-sentis-float16) | 10.8 | 0.3 GB | +1.0 GB |
+| [SmolLM2-360M-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-360M-Instruct-sentis-float16) | 8.1 | 1.3 GB | +1.7 GB |
+| [SmolLM2-1.7B-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-1.7B-Instruct-sentis-float16) | 8.0 | 4.2 GB | +7.4 GB |
+| [Phi-3-mini-4k-instruct-sentis-uint8](https://huggingface.co/julienkay/Phi-3-mini-4k-instruct-sentis-uint8) | 6.4 | 4.6 GB | +7.5 GB |
+| [Phi-3-mini-4k-instruct-sentis-float16](https://huggingface.co/julienkay/Phi-3-mini-4k-instruct-sentis-float16) | 5.8 | 8.0 GB | +15.2 GB |
+
+- Peak VRAM is the GPU memory that the model adds, from `nvidia-smi`.
+- Peak RAM is the private memory that the Editor process adds while it loads and runs the model.
+- Measured on 2026-11-24 with Unity 6000.6.4f1, an NVIDIA GeForce RTX 3060 (12 GB) and an Intel Core i7-4790K.
+
 ## Roadmap:
 
 Tokenizers
@@ -63,7 +79,7 @@ Tokenizers
 
 LLMs
 - [x] Llama (SmolLM2)
-- [ ] Phi-3
+- [x] Phi-3
 
 ### Dependencies
 - [AI Model Hub] (`tools.doji.model-hub`)
