@@ -16,7 +16,7 @@ The tiny test model is a random-weight LlamaForCausalLM with the tokenizer of Hu
 so the tests run the tokenizer files of a real model.
 
 Usage:
-  python make_models.py export <model id or folder> <out folder>
+  python make_models.py export <model id or folder> <out folder> [--dtype float16]
   python make_models.py tiny <out folder>
   python make_models.py references <tiny folder>
   python make_models.py upload <folder> <repo id>
@@ -35,6 +35,8 @@ RESOURCES = os.path.normpath(os.path.join(HERE, "..", "..", "tools.doji.transfor
 TOKENIZER_REPO = "HuggingFaceTB/SmolLM2-135M-Instruct"
 TOKENIZER_REVISION = "12fd25f77366fa6b3b4b768ec3050bf629380bac"
 TOKENIZER_FILES = ["tokenizer.json", "tokenizer_config.json", "special_tokens_map.json", "vocab.json", "merges.txt"]
+# Other tokenizer files that some models have, for example the sentencepiece model of Phi-3.
+EXTRA_TOKENIZER_FILES = ["tokenizer.model", "added_tokens.json"]
 
 # Texts for the tokenizer tests: digits, contractions, whitespace runs, unicode, emoji and special tokens.
 TEXTS = [
@@ -48,9 +50,9 @@ MESSAGES = [{"role": "user", "content": "What is the capital of France?"}]
 NEW_TOKENS = 8
 
 
-def load_model(model_id):
+def load_model(model_id, dtype=torch.float32):
     from transformers import AutoModelForCausalLM
-    return AutoModelForCausalLM.from_pretrained(model_id, dtype=torch.float32, attn_implementation="eager").eval()
+    return AutoModelForCausalLM.from_pretrained(model_id, dtype=dtype, attn_implementation="eager").eval()
 
 
 class Step(torch.nn.Module):
@@ -70,7 +72,8 @@ class Step(torch.nn.Module):
         seq, total = input_ids.shape[1], attention_mask.shape[1]
         query = torch.arange(seq) + (total - seq)
         allowed = (torch.arange(total)[None, :] <= query[:, None])[None, None] & attention_mask[:, None, None, :].bool()
-        mask = torch.zeros(allowed.shape).masked_fill(~allowed, torch.finfo(torch.float32).min)
+        dtype = self.model.dtype
+        mask = torch.zeros(allowed.shape, dtype=dtype).masked_fill(~allowed, torch.finfo(dtype).min)
         out = self.model(input_ids=input_ids, attention_mask=mask, position_ids=position_ids,
                          past_key_values=cache, use_cache=True)
         present = []
@@ -90,7 +93,7 @@ def export_onnx(model, path):
     layers = config.num_hidden_layers
     heads, head_dim = kv_shape(config)
     past, seq = 2, 3
-    past_kv = [torch.randn(1, heads, past, head_dim) for _ in range(2 * layers)]
+    past_kv = [torch.randn(1, heads, past, head_dim, dtype=model.dtype) for _ in range(2 * layers)]
     args = (torch.tensor([[11, 12, 13]]), torch.ones(1, past + seq, dtype=torch.int64),
             torch.arange(past, past + seq).unsqueeze(0), *past_kv)
     past_names = [f"past_key_values.{i}.{kind}" for i in range(layers) for kind in ("key", "value")]
@@ -166,11 +169,15 @@ def copy_files(model_id, out, files):
 
 def export(args):
     os.makedirs(args.out, exist_ok=True)
-    model = load_model(args.model)
+    # float16 halves the memory of the export, for models of a few billion parameters. The weights, the KV cache
+    # and the logits are then float16 too. onnxruntime on the CPU does not run every float16 op: check those in Unity.
+    float16 = getattr(args, "dtype", "float32") == "float16"
+    model = load_model(args.model, torch.float16 if float16 else torch.float32)
     path = os.path.join(args.out, "model.onnx")
     export_onnx(model, path)
-    copy_files(args.model, args.out, ["config.json", "generation_config.json"] + TOKENIZER_FILES)
-    check_export(model, path)
+    copy_files(args.model, args.out, ["config.json", "generation_config.json"] + TOKENIZER_FILES + EXTRA_TOKENIZER_FILES)
+    if not float16:
+        check_export(model, path)
     print("exported", path)
 
 
@@ -254,7 +261,8 @@ def upload(args):
 def main():
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command", required=True)
-    p = sub.add_parser("export"); p.add_argument("model"); p.add_argument("out"); p.set_defaults(run=export)
+    p = sub.add_parser("export"); p.add_argument("model"); p.add_argument("out")
+    p.add_argument("--dtype", choices=["float32", "float16"], default="float32"); p.set_defaults(run=export)
     p = sub.add_parser("tiny"); p.add_argument("out"); p.set_defaults(run=tiny)
     p = sub.add_parser("references"); p.add_argument("tiny"); p.set_defaults(run=references)
     p = sub.add_parser("upload"); p.add_argument("folder"); p.add_argument("repo"); p.set_defaults(run=upload)

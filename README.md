@@ -41,10 +41,12 @@ var tokenizer = await AutoTokenizer.FromPretrainedAsync("julienkay/SmolLM2-135M-
 var model = await AutoModelForCausalLM.FromPretrainedAsync("julienkay/SmolLM2-135M-Instruct-onnx");
 
 string prompt = tokenizer.ApplyChatTemplate(new[] { ChatMessage.User("What is the capital of France?") });
-int[] inputIds = tokenizer.Encode(prompt).InputIds.ToArray();
+int[] inputIds = tokenizer.Encode(prompt, addSpecialTokens: false).InputIds.ToArray();
 var streamer = new TextStreamer(tokenizer, text => Debug.Log(text), skipPrompt: true);
 int[] outputIds = await model.GenerateAsync(inputIds, new GenerationConfig { MaxNewTokens = 64 }, streamer);
 ```
+
+To try it, import the **Text Generation Sample** from the Package Manager and open its scene. The sample lists its model in a Model Hub manifest asset, so Model Hub downloads the model after the import.
 
 `FromPretrained` and `Generate` (without `Async`) run without waiting. They work in the Editor and for bundled or already downloaded models on Windows, macOS, Linux and iOS.
 

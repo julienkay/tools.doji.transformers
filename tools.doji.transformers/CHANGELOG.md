@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - `Qwen2Tokenizer`, and truncation, padding, pairs and batches as transformers v5 does them.
 - `ApplyChatTemplate` for ChatML and Phi-3 chat templates.
 - `AutoTokenizer.FromPretrainedAsync`, which picks the tokenizer class from the model type and the tokenizer config as transformers v5 does.
-- A text generation sample with SmolLM2-135M-Instruct, which replaces the Phi-3 sample.
+- A text generation sample: a chat with SmolLM2-135M-Instruct, which replaces the Phi-3 sample. It ships a Model Hub manifest asset, so Model Hub downloads the model after the import.
 - Tests that compare a tiny random Llama model with onnxruntime and transformers, and the tokenizers with the official ones on many edge cases.
 
 ### Changed

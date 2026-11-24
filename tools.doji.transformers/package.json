@@ -21,7 +21,7 @@
   "samples": [
     {
       "displayName": "Text Generation Sample",
-      "description": "A simple chat with SmolLM2-135M-Instruct. List julienkay/SmolLM2-135M-Instruct-onnx in the project's AI Model Hub manifest first.",
+      "description": "A simple chat with a small language model (SmolLM2-135M-Instruct). AI Model Hub downloads the model after the import.",
       "path": "Samples~/01-TextGenerationSample"
     }
   ]
