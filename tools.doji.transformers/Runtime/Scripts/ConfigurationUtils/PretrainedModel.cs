@@ -37,9 +37,30 @@ namespace Doji.AI.Transformers {
         private readonly int _inputIds, _attentionMask, _positionIds, _logits;
         private readonly int[] _pastInputs, _presentOutputs;
 
-        protected PreTrainedModel(Model model, PretrainedConfig config, GenerationConfig generationConfig, BackendType backend) {
-            if (model == null) {
-                throw new ArgumentNullException(nameof(model));
+        /// <summary>
+        /// Creates the model from a model in memory. On <see cref="BackendType.GPUCompute"/> its weights move to the
+        /// GPU, so <paramref name="model"/> cannot create another worker afterwards.
+        /// </summary>
+        protected PreTrainedModel(Model model, PretrainedConfig config, GenerationConfig generationConfig, BackendType backend)
+            : this(model?.inputs, model?.outputs, config, generationConfig) {
+            // A uint8 embedding table otherwise dequantizes as a whole on every step.
+            QuantizedGather.Fuse(model);
+            _worker = WorkerUtils.CreateWorkerWithWeightsOnGpu(model, backend);
+        }
+
+        /// <summary>
+        /// Creates the model from an open .sentis file. The weights go from the file to the worker, so they are
+        /// never in managed memory. The file can be disposed afterwards.
+        /// </summary>
+        protected PreTrainedModel(ModelFile file, PretrainedConfig config, GenerationConfig generationConfig, BackendType backend)
+            : this(file?.Inputs, file?.Outputs, config, generationConfig) {
+            _worker = file.CreateWorker(backend);
+        }
+
+        private PreTrainedModel(IReadOnlyList<Model.Input> modelInputs, IReadOnlyList<Model.Output> modelOutputs,
+            PretrainedConfig config, GenerationConfig generationConfig) {
+            if (modelInputs == null) {
+                throw new ArgumentNullException("model");
             }
             Config = config;
             GenerationConfig = generationConfig ?? new GenerationConfig();
@@ -47,8 +68,8 @@ namespace Doji.AI.Transformers {
             _headDim = config.HeadDim ?? config.HiddenSize / config.NumAttentionHeads;
 
             // Inputs and outputs by index, not by name: setting inputs by name fails on quantized models.
-            var inputs = model.inputs.Select(i => i.name).ToList();
-            var outputs = model.outputs.Select(o => o.name).ToList();
+            var inputs = modelInputs.Select(i => i.name).ToList();
+            var outputs = modelOutputs.Select(o => o.name).ToList();
             int Input(string name) => IndexOf(inputs, name, "input");
             int Output(string name) => IndexOf(outputs, name, "output");
             _inputIds = Input("input_ids");
@@ -64,7 +85,6 @@ namespace Doji.AI.Transformers {
                 _presentOutputs[2 * i] = Output($"present.{i}.key");
                 _presentOutputs[2 * i + 1] = Output($"present.{i}.value");
             }
-            _worker = new Worker(model, backend);
         }
 
         private static int IndexOf(List<string> names, string name, string kind) {
@@ -77,13 +97,13 @@ namespace Doji.AI.Transformers {
         /// Reads the configs and the model of a repository and creates the model class.
         /// </summary>
         internal static async Task<T> FromPretrainedAsync<T>(ModelRepository files, BackendType backend,
-            Func<Model, PretrainedConfig, GenerationConfig, BackendType, T> create) where T : PreTrainedModel {
+            Func<ModelFile, PretrainedConfig, GenerationConfig, BackendType, T> create) where T : PreTrainedModel {
             var config = await files.ReadJsonAsync<PretrainedConfig>(CONFIG_NAME);
             // Like transformers' GenerationConfig.from_model_config: config.json has the special token ids too.
             var generationConfig = GenerationConfig.Deserialize(await files.ReadTextAsync(
                 files.Has(GENERATION_CONFIG_NAME) ? GENERATION_CONFIG_NAME : CONFIG_NAME));
-            var model = await files.LoadModelAsync(MODEL_NAME);
-            T result = create(model, config, generationConfig, backend);
+            using var file = await files.OpenModelAsync(MODEL_NAME);
+            T result = create(file, config, generationConfig, backend);
             result.ModelId = files.ModelId;
             return result;
         }

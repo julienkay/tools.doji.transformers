@@ -11,8 +11,13 @@ namespace Doji.AI.Transformers {
     /// </summary>
     public class LlamaForCausalLM : PreTrainedModel {
 
+        /// <inheritdoc cref="PreTrainedModel(Model, PretrainedConfig, GenerationConfig, BackendType)"/>
         public LlamaForCausalLM(Model model, PretrainedConfig config, GenerationConfig generationConfig = null, BackendType backend = BackendType.GPUCompute)
             : base(model, config, generationConfig, backend) { }
+
+        /// <inheritdoc cref="PreTrainedModel(ModelFile, PretrainedConfig, GenerationConfig, BackendType)"/>
+        public LlamaForCausalLM(ModelFile file, PretrainedConfig config, GenerationConfig generationConfig = null, BackendType backend = BackendType.GPUCompute)
+            : base(file, config, generationConfig, backend) { }
 
         /// <summary>
         /// Loads a pretrained model through AI Model Hub. Works on every platform.
@@ -30,8 +35,8 @@ namespace Doji.AI.Transformers {
             return SyncTask.Run(FromPretrainedAsync(ModelRepository.Open(modelId), backend, Create));
         }
 
-        internal static LlamaForCausalLM Create(Model model, PretrainedConfig config, GenerationConfig generationConfig, BackendType backend) {
-            return new LlamaForCausalLM(model, config, generationConfig, backend);
+        internal static LlamaForCausalLM Create(ModelFile file, PretrainedConfig config, GenerationConfig generationConfig, BackendType backend) {
+            return new LlamaForCausalLM(file, config, generationConfig, backend);
         }
     }
 }
