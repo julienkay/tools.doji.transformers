@@ -74,7 +74,7 @@ Long prompts with Phi-3-mini-4k-instruct-sentis-float16, 4 new tokens after the 
 
 - Peak VRAM is the GPU memory that the model adds, from `nvidia-smi`. In the long-prompt table, VRAM is the memory of the whole GPU while the model holds its cache.
 - Peak RAM is the resident memory (working set) that the Editor process adds while it loads and runs the model.
-- D3D12 is the default graphics API of Unity 6 on Windows. On D3D12, GPU memory that a model frees during a long prompt often stays allocated, so long prompts need more VRAM. To use D3D11, turn off *Auto Graphics API for Windows* in the Player settings and put Direct3D11 first, or start the Editor with `-force-d3d11`.
+- D3D12 is the default graphics API of Unity 6 on Windows. On D3D12, GPU memory that a model frees during a long prompt can't be reused in the same frame, so long prompts need more VRAM. To use D3D11, turn off *Auto Graphics API for Windows* in the Player settings and put Direct3D11 first, or start the Editor with `-force-d3d11`.
 - Measured on 2026-11-24 with `BackendType.GPUCompute`, Unity 6000.6.4f1, an NVIDIA GeForce RTX 3060 (12 GB) and an Intel Core i7-4790K. The D3D11 numbers come from one run per model.
 
 ## Roadmap:
