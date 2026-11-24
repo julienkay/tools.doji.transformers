@@ -146,8 +146,8 @@ MonoBehaviour:
       <Label>k__BackingField: 
       <Quantization>k__BackingField: 
       <InputShapes>k__BackingField: []
-  - <Id>k__BackingField: julienkay/Phi-3-mini-4k-instruct-onnx
-    <Revision>k__BackingField: d54f3876addc7e569ea04f72c3466aad495fd045
+  - <Id>k__BackingField: julienkay/Phi-3-mini-4k-instruct-sentis-uint8
+    <Revision>k__BackingField: 179adf6756f6f45d1d33e997446759e3ade001c8
     <Optional>k__BackingField: 1
     <Files>k__BackingField:
     - <Path>k__BackingField: config.json
@@ -185,12 +185,7 @@ MonoBehaviour:
       <Label>k__BackingField: 
       <Quantization>k__BackingField: 
       <InputShapes>k__BackingField: []
-    - <Path>k__BackingField: model.onnx
-      <Optional>k__BackingField: 0
-      <Label>k__BackingField: 
-      <Quantization>k__BackingField: uint8
-      <InputShapes>k__BackingField: []
-    - <Path>k__BackingField: model.onnx_data
+    - <Path>k__BackingField: model.sentis
       <Optional>k__BackingField: 0
       <Label>k__BackingField: 
       <Quantization>k__BackingField: 

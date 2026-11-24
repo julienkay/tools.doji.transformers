@@ -23,7 +23,7 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
             "julienkay/SmolLM2-360M-Instruct-sentis-float16",
             "julienkay/SmolLM2-1.7B-Instruct-sentis-float16",
             "julienkay/SmolLM2-135M-Instruct-sentis-float16",
-            "julienkay/Phi-3-mini-4k-instruct-onnx",
+            "julienkay/Phi-3-mini-4k-instruct-sentis-uint8",
         };
         public int MaxNewTokens = 256;
 
@@ -117,7 +117,7 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
 
         private static string DisplayName(string modelId) {
             string name = modelId.Split('/').Last();
-            foreach (string suffix in new[] { "-onnx", "-sentis-float16" }) {
+            foreach (string suffix in new[] { "-onnx", "-sentis-float16", "-sentis-uint8" }) {
                 if (name.EndsWith(suffix)) {
                     return name[..^suffix.Length];
                 }

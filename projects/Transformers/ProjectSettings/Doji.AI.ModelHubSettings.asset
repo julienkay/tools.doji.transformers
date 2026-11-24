@@ -18,6 +18,8 @@ MonoBehaviour:
   _deliveryOverrides: []
   _enabledOptionalModels:
   - ownerId: project-manifest-c4cf25ac579e44cab3a4a8c84c3f98e0
+    modelId: julienkay/Phi-3-mini-4k-instruct-sentis-uint8
+  - ownerId: project-manifest-c4cf25ac579e44cab3a4a8c84c3f98e0
     modelId: julienkay/SmolLM2-1.7B-Instruct-sentis-float16
   _optionalFileSelections: []
   _conversionOverrides: []
