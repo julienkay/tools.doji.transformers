@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Text generation with decoder-only language models exported to plain ONNX (the input and output names of optimum): `AutoModelForCausalLM`, `LlamaForCausalLM` (for example SmolLM2) and `Phi3ForCausalLM`.
 - `FromPretrained` loads `model.sentis` when the repository has it, and `model.onnx` otherwise.
 - `PreTrainedModel.GenerateAsync` and `Generate`, like transformers' `generate` with greedy decoding or sampling: a KV cache on the GPU (`DynamicCache`), the logits processors for repetition penalty, minimum new tokens, temperature, top-k, top-p and min-p, and stopping at the maximum length, the maximum time or an end-of-sequence token.
+- `PreTrainedModel.ForwardAsync` reads a prompt longer than `PreTrainedModel.PrefillChunkSize` (256 tokens) in chunks, like the chunked prefill of vLLM and llama.cpp, so one run of the model holds the activations and logits of at most 256 tokens. `DynamicCache.Clear` empties a cache.
+- On a model loaded from a `.sentis` file, the worker frees each key and value of the cache after the layer that reads it, and the cache takes the new ones from the worker without a copy, so the KV cache is in GPU memory only once.
 - `TextStreamer`, which passes on the text as it is generated.
 - `TokenizersBackend`, the tokenizer of transformers v5: it runs the `Tokenizer` of `tools.doji.tokenizers`, a C# port of the Hugging Face tokenizers library, and loads any `tokenizer.json` (BPE, Unigram, WordPiece and WordLevel models).
 - `Qwen2Tokenizer`, and truncation, padding, pairs and batches as transformers v5 does them.

@@ -88,6 +88,26 @@ namespace Doji.AI.Transformers.Editor.Tests {
         }
 
         /// <summary>
+        /// A prompt longer than <see cref="PreTrainedModel.PrefillChunkSize"/> runs in chunks, and gives the logits of
+        /// reading its tokens one at a time.
+        /// </summary>
+        [Test]
+        public void Logits_OfChunkedPrefill_MatchOneTokenAtATime() {
+            int length = PreTrainedModel.PrefillChunkSize + 40;
+            int[] ids = Enumerable.Range(0, length).Select(i => _prompt[i % _prompt.Length]).ToArray();
+            using var chunked = _model.CreateCache();
+            float[] logits = _model.Forward(ids, chunked);
+            Assert.That(chunked.GetSeqLength(), Is.EqualTo(length));
+
+            using var single = _model.CreateCache();
+            float[] expected = null;
+            foreach (int id in ids) {
+                expected = _model.Forward(new[] { id }, single);
+            }
+            TestUtils.AssertClose(expected, logits, 1e-4f, "logits");
+        }
+
+        /// <summary>
         /// Greedy decoding with the KV cache gives the tokens of transformers' <c>generate(do_sample=False)</c>.
         /// </summary>
         [Test]

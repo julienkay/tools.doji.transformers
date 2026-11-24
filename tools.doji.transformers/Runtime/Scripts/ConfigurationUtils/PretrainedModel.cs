@@ -129,33 +129,57 @@ namespace Doji.AI.Transformers {
         /// <inheritdoc cref="ForwardAsync(IReadOnlyList{int}, DynamicCache)"/>
         public float[] Forward(IReadOnlyList<int> inputIds, DynamicCache cache) => SyncTask.Run(ForwardAsync(inputIds, cache, true));
 
-        internal async Task<float[]> ForwardAsync(IReadOnlyList<int> ids, DynamicCache cache, bool sync) {
-            int past = cache.GetSeqLength();
-            int total = past + ids.Count;
-            using var inputIds = new Tensor<int>(new TensorShape(1, ids.Count), ids.ToArray());
-            using var attentionMask = new Tensor<int>(new TensorShape(1, total), Enumerable.Repeat(1, total).ToArray());
-            using var positionIds = new Tensor<int>(new TensorShape(1, ids.Count), Enumerable.Range(past, ids.Count).ToArray());
-            _worker.SetInput(_inputIds, inputIds);
-            _worker.SetInput(_attentionMask, attentionMask);
-            _worker.SetInput(_positionIds, positionIds);
-            for (int i = 0; i < cache.NumLayers; i++) {
-                _worker.SetInput(_pastInputs[2 * i], cache[i].Key);
-                _worker.SetInput(_pastInputs[2 * i + 1], cache[i].Value);
-            }
-            _worker.Schedule();
+        /// <summary>
+        /// The most tokens of a prompt that one run of the model reads. A longer prompt runs in chunks, as vLLM's and
+        /// llama.cpp's chunked prefill do, so the activations and logits of one run stay small.
+        /// </summary>
+        public const int PrefillChunkSize = 256;
 
-            // The worker reuses its outputs on the next run, so the cache keeps copies.
-            for (int i = 0; i < cache.NumLayers; i++) {
-                Tensor key = null, value = null;
-                _worker.CopyOutput(_presentOutputs[2 * i], ref key);
-                _worker.CopyOutput(_presentOutputs[2 * i + 1], ref value);
-                cache.Update((Tensor<float>)key, (Tensor<float>)value, i);
+        internal async Task<float[]> ForwardAsync(IReadOnlyList<int> ids, DynamicCache cache, bool sync) {
+            for (int start = 0; start + PrefillChunkSize < ids.Count; start += PrefillChunkSize) {
+                Run(ids.Skip(start).Take(PrefillChunkSize).ToArray(), cache);
             }
+            int last = (ids.Count - 1) / PrefillChunkSize * PrefillChunkSize;
+            Run(last == 0 && ids is int[] all ? all : ids.Skip(last).ToArray(), cache);
 
             var logits = (Tensor<float>)_worker.PeekOutput(_logits);
             int vocab = logits.shape[-1];
             using Tensor<float> cpu = sync ? logits.ReadbackAndClone() : await logits.ReadbackAndCloneAsync();
             return cpu.AsReadOnlySpan()[^vocab..].ToArray();
+        }
+
+        /// <summary>
+        /// Schedules one run of the model on <paramref name="ids"/> after the tokens in <paramref name="cache"/>.
+        /// The worker takes the keys and values of the cache and frees each after the layer that reads it, and the
+        /// cache takes the new ones from the worker, so the cache is not in memory twice.
+        /// </summary>
+        private void Run(int[] ids, DynamicCache cache) {
+            int past = cache.GetSeqLength();
+            int total = past + ids.Length;
+            using var inputIds = new Tensor<int>(new TensorShape(1, ids.Length), ids);
+            using var attentionMask = new Tensor<int>(new TensorShape(1, total), Enumerable.Repeat(1, total).ToArray());
+            using var positionIds = new Tensor<int>(new TensorShape(1, ids.Length), Enumerable.Range(past, ids.Length).ToArray());
+            _worker.SetInput(_inputIds, inputIds);
+            _worker.SetInput(_attentionMask, attentionMask);
+            _worker.SetInput(_positionIds, positionIds);
+            for (int i = 0; i < cache.NumLayers; i++) {
+                var (key, value) = cache[i];
+                bool given = _worker.TryGiveInput(_pastInputs[2 * i], key);
+                given &= _worker.TryGiveInput(_pastInputs[2 * i + 1], value);
+                if (given) {
+                    cache.Forget(i);
+                }
+            }
+            try {
+                _worker.Schedule();
+            } catch {
+                cache.Clear();
+                throw;
+            }
+            for (int i = 0; i < cache.NumLayers; i++) {
+                cache.Update((Tensor<float>)_worker.TakeOutput(_presentOutputs[2 * i]),
+                    (Tensor<float>)_worker.TakeOutput(_presentOutputs[2 * i + 1]), i);
+            }
         }
 
         public virtual void Dispose() {
