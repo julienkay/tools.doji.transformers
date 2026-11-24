@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.InferenceEngine;
+using Unity.Profiling;
 using Random = System.Random;
 
 namespace Doji.AI.Transformers {
@@ -75,6 +76,12 @@ namespace Doji.AI.Transformers {
         }
 
         private GpuSampler _sampler;
+
+        // The main-thread work of GenerateAsync in a frame, and its parts.
+        private static readonly ProfilerMarker FrameMarker = new("Doji.Generate.Frame");
+        private static readonly ProfilerMarker StepMarker = new("Doji.Generate.Step");
+        private static readonly ProfilerMarker SampleMarker = new("Doji.Generate.Sample");
+        private static readonly ProfilerMarker TokensMarker = new("Doji.Generate.Tokens");
         private GenerationPacing _pacing = new GenerationPacing();
 
         /// <summary>
@@ -114,6 +121,7 @@ namespace Doji.AI.Transformers {
                 _sampler.Reset(ids);
                 int sampled = 0;
                 void Sample(Tensor<float> scores) {
+                    using var marker = SampleMarker.Auto();
                     _sampler.Schedule(scores, sampled, config.DoSample ? random.NextDouble() : 0);
                     sampled++;
                     var token = sync ? Task.FromResult(ReadToken(_sampler.Token)) : ReadTokenAsync(_sampler.Token);
@@ -125,46 +133,57 @@ namespace Doji.AI.Transformers {
                 bool FrameBudgetUsed() => clock.Elapsed.TotalMilliseconds >= pacer.MaxMillisecondsPerFrame;
                 while (true) {
                     cancellationToken.ThrowIfCancellationRequested();
+                    int latency = -1;
                     int steps = 0;
-                    clock.Restart();
                     int stepsPerFrame = pacer?.StepsPerFrame ?? 1;
                     int inFlight = pacer?.InFlight ?? 1;
-                    while (true) {
-                        if (step == null) {
-                            bool start = steps < stepsPerFrame && sampled < maxNewTokens && pending.Count < inFlight
-                                && (steps == 0 || !FrameBudgetUsed());
-                            if (!start) {
+                    using (FrameMarker.Auto()) {
+                        clock.Restart();
+                        while (true) {
+                            if (step == null) {
+                                bool start = steps < stepsPerFrame && sampled < maxNewTokens && pending.Count < inFlight
+                                    && (steps == 0 || !FrameBudgetUsed());
+                                if (!start) {
+                                    break;
+                                }
+                                if (pacer == null || !pacer.SpreadStepsOverFrames) {
+                                    using (StepMarker.Auto()) {
+                                        Run(_sampler.Token, cache);
+                                    }
+                                    Sample((Tensor<float>)_worker.PeekOutput(_logits));
+                                    steps++;
+                                    continue;
+                                }
+                                step = RunInParts(_sampler.Token, cache, FrameBudgetUsed);
+                            }
+                            // A step spread over frames: schedule its layers until the frame budget is used.
+                            bool more;
+                            using (StepMarker.Auto()) {
+                                more = step.MoveNext();
+                            }
+                            if (more) {
                                 break;
                             }
-                            if (pacer == null || !pacer.SpreadStepsOverFrames) {
-                                Run(_sampler.Token, cache);
-                                Sample((Tensor<float>)_worker.PeekOutput(_logits));
-                                steps++;
-                                continue;
+                            step = null;
+                            Sample((Tensor<float>)_worker.PeekOutput(_logits));
+                            steps++;
+                        }
+                        using (TokensMarker.Auto()) {
+                            while (pending.Count > 0 && pending.Peek().token.IsCompleted) {
+                                var (token, frame) = pending.Dequeue();
+                                // The token is done, so this does not wait.
+                                int next = token.GetAwaiter().GetResult();
+                                latency = sync ? 0 : UnityEngine.Time.frameCount - frame;
+                                ids.Add(next);
+                                streamer?.Put(new[] { next });
+                                if (stoppingCriteria.IsDone(ids)) {
+                                    return ids.ToArray();
+                                }
                             }
-                            step = RunInParts(_sampler.Token, cache, FrameBudgetUsed);
                         }
-                        // A step spread over frames: schedule its layers until the frame budget is used.
-                        if (step.MoveNext()) {
-                            break;
-                        }
-                        step = null;
-                        Sample((Tensor<float>)_worker.PeekOutput(_logits));
-                        steps++;
-                    }
-                    int latency = -1;
-                    while (pending.Count > 0 && pending.Peek().token.IsCompleted) {
-                        var (token, frame) = pending.Dequeue();
-                        int next = await token;
-                        latency = sync ? 0 : UnityEngine.Time.frameCount - frame;
-                        ids.Add(next);
-                        streamer?.Put(new[] { next });
-                        if (stoppingCriteria.IsDone(ids)) {
+                        if (pending.Count == 0 && sampled >= maxNewTokens) {
                             return ids.ToArray();
                         }
-                    }
-                    if (pending.Count == 0 && sampled >= maxNewTokens) {
-                        return ids.ToArray();
                     }
                     if (!sync) {
                         await UnityEngine.Awaitable.NextFrameAsync(cancellationToken);

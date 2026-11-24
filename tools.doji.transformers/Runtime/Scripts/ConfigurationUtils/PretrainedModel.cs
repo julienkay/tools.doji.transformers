@@ -58,6 +58,8 @@ namespace Doji.AI.Transformers {
             : this(model?.inputs, model?.outputs, config, generationConfig) {
             // A uint8 embedding table otherwise dequantizes as a whole on every step.
             QuantizedGather.Fuse(model);
+            // A small CPU value read back from the GPU otherwise waits for the GPU work before it.
+            Readbacks.Avoid(model);
             _worker = WorkerUtils.CreateWorkerWithWeightsOnGpu(model, backend);
             _commandBuffer = CreateCommandBuffer(backend);
         }

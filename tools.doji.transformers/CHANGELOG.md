@@ -33,6 +33,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - The special tokens of `PreTrainedTokenizerBase` are strings, and `TokenizerConfig` reads them as the `AddedToken` of `tools.doji.tokenizers`.
 - Depends on `tools.doji.tokenizers` instead of `tools.doji.sentencepiece` and its DLLs.
 
+### Fixed
+
+- On the GPU backend, the main thread stopped at the start of each step of `GenerateAsync` until the GPU had done the work of the step before, because the model read the sequence length back from the GPU. Models loaded from a file and models created from a `Model` in memory now keep it on the CPU.
+
 ### Removed
 
 - Loading models from `Resources` and `StreamingAssets`.
