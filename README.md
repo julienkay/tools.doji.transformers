@@ -13,7 +13,7 @@ This is essentially a C# port of Hugging Face’s [transformers] library.
 
 There are two use cases for this package right now:
 - It's used by the [tools.doji.diffusers] package to run Stable Diffusion models in Unity (most SD models use a CLIPTokenizer for prompting, newer pipelines require additional ones like T5Tokenizer)
-- To run small LLMs like [SmolLM2](https://huggingface.co/julienkay/SmolLM2-135M-Instruct-onnx) in Unity
+- To run small LLMs like [SmolLM2](https://huggingface.co/julienkay/SmolLM2-135M-Instruct-sentis-float16) in Unity
 
 ### Installation
 
@@ -37,8 +37,8 @@ Models come through [AI Model Hub] (`tools.doji.model-hub`). List them in the pr
 ```csharp
 using Doji.AI.Transformers;
 
-var tokenizer = await AutoTokenizer.FromPretrainedAsync("julienkay/SmolLM2-135M-Instruct-onnx");
-var model = await AutoModelForCausalLM.FromPretrainedAsync("julienkay/SmolLM2-135M-Instruct-onnx");
+var tokenizer = await AutoTokenizer.FromPretrainedAsync("julienkay/SmolLM2-135M-Instruct-sentis-float16");
+var model = await AutoModelForCausalLM.FromPretrainedAsync("julienkay/SmolLM2-135M-Instruct-sentis-float16");
 
 string prompt = tokenizer.ApplyChatTemplate(new[] { ChatMessage.User("What is the capital of France?") });
 int[] inputIds = tokenizer.Encode(prompt, addSpecialTokens: false).InputIds.ToArray();

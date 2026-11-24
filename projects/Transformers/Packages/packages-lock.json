@@ -196,6 +196,7 @@
       "dependencies": {
         "tools.doji.downloads": "1.0.0",
         "tools.doji.formats.onnx": "1.0.0",
+        "tools.doji.onnx-model-loader": "1.0.0",
         "com.unity.ai.inference": "2.6.1",
         "tools.doji.sentis-utils": "0.1.1",
         "com.unity.nuget.newtonsoft-json": "3.2.2"
