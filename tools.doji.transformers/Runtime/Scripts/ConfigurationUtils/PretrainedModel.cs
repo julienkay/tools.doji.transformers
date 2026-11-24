@@ -158,16 +158,23 @@ namespace Doji.AI.Transformers {
         public const int PrefillChunkSize = 256;
 
         internal async Task<float[]> ForwardAsync(IReadOnlyList<int> ids, DynamicCache cache, bool sync) {
+            var logits = Prefill(ids, cache);
+            int vocab = logits.shape[-1];
+            using Tensor<float> cpu = sync ? logits.ReadbackAndClone() : await logits.ReadbackAndCloneAsync();
+            return cpu.AsReadOnlySpan()[^vocab..].ToArray();
+        }
+
+        /// <summary>
+        /// Schedules the runs of the model on <paramref name="ids"/>, in chunks of <see cref="PrefillChunkSize"/>.
+        /// </summary>
+        /// <returns>The logits of the last chunk, on the device of the worker.</returns>
+        private Tensor<float> Prefill(IReadOnlyList<int> ids, DynamicCache cache) {
             for (int start = 0; start + PrefillChunkSize < ids.Count; start += PrefillChunkSize) {
                 Run(ids.Skip(start).Take(PrefillChunkSize).ToArray(), cache);
             }
             int last = (ids.Count - 1) / PrefillChunkSize * PrefillChunkSize;
             Run(last == 0 && ids is int[] all ? all : ids.Skip(last).ToArray(), cache);
-
-            var logits = (Tensor<float>)_worker.PeekOutput(_logits);
-            int vocab = logits.shape[-1];
-            using Tensor<float> cpu = sync ? logits.ReadbackAndClone() : await logits.ReadbackAndCloneAsync();
-            return cpu.AsReadOnlySpan()[^vocab..].ToArray();
+            return (Tensor<float>)_worker.PeekOutput(_logits);
         }
 
         /// <summary>
@@ -176,11 +183,19 @@ namespace Doji.AI.Transformers {
         /// cache takes the new ones from the worker, so the cache is not in memory twice.
         /// </summary>
         private void Run(int[] ids, DynamicCache cache) {
-            int past = cache.GetSeqLength();
-            int total = past + ids.Length;
             using var inputIds = new Tensor<int>(new TensorShape(1, ids.Length), ids);
+            Run(inputIds, cache);
+        }
+
+        /// <inheritdoc cref="Run(int[], DynamicCache)"/>
+        /// <param name="inputIds">The token ids, shape (1, tokens). They can be on the GPU, for example the token
+        /// that <see cref="GpuSampler"/> picked.</param>
+        private void Run(Tensor<int> inputIds, DynamicCache cache) {
+            int count = inputIds.shape[1];
+            int past = cache.GetSeqLength();
+            int total = past + count;
             using var attentionMask = new Tensor<int>(new TensorShape(1, total), Enumerable.Repeat(1, total).ToArray());
-            using var positionIds = new Tensor<int>(new TensorShape(1, ids.Length), Enumerable.Range(past, ids.Length).ToArray());
+            using var positionIds = new Tensor<int>(new TensorShape(1, count), Enumerable.Range(past, count).ToArray());
             _worker.SetInput(_inputIds, inputIds);
             _worker.SetInput(_attentionMask, attentionMask);
             _worker.SetInput(_positionIds, positionIds);
@@ -204,6 +219,8 @@ namespace Doji.AI.Transformers {
         }
 
         public virtual void Dispose() {
+            _sampler?.Dispose();
+            _sampler = null;
             _worker?.Dispose();
         }
     }

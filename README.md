@@ -64,6 +64,15 @@ Rough numbers for greedy generation in Play mode with one frame after each token
 | [Phi-3-mini-4k-instruct-sentis-uint8](https://huggingface.co/julienkay/Phi-3-mini-4k-instruct-sentis-uint8) | 6.7 / 7.4 | 4.4 / 4.5 GB | +0.3 / +0.4 GB |
 | [Phi-3-mini-4k-instruct-sentis-float16](https://huggingface.co/julienkay/Phi-3-mini-4k-instruct-sentis-float16) | 6.0 / 6.5 | 7.8 / 7.7 GB | +0.5 / +0.6 GB |
 
+In a release Player (vSync on), `GenerateAsync` picks the tokens on the GPU and takes about one frame per token. 64 tokens after a short prompt, the second of two runs:
+
+| Model | Greedy, tokens/s<br>D3D12 / D3D11 | Sampling, tokens/s<br>D3D12 / D3D11 |
+|---|---|---|
+| SmolLM2-135M-Instruct-sentis-float16 | 32.6 / 43.0 | 26.5 / 33.0 |
+| SmolLM2-1.7B-Instruct-sentis-float16 | 13.5 / 11.7 | 12.4 / 11.0 |
+
+Sampling uses temperature 0.7, top-k 50, top-p 0.9 and repetition penalty 1.1. The Play mode table above was measured before the sampling moved to the GPU, when each token took about 3 frames.
+
 Long prompts with Phi-3-mini-4k-instruct-sentis-float16, 4 new tokens after the prompt:
 
 | Prompt | D3D12 | D3D11 |

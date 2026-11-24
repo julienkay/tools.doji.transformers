@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.InferenceEngine;
+using Random = System.Random;
 
 namespace Doji.AI.Transformers {
 
@@ -43,6 +45,9 @@ namespace Doji.AI.Transformers {
             StoppingCriteriaList stoppingCriteria = GetStoppingCriteria(config, maxLength);
 
             streamer?.Put(inputIds);
+            if (_worker.backendType == BackendType.GPUCompute && config.UseCache) {
+                return await GenerateOnGpuAsync(ids, maxLength, config, stoppingCriteria, streamer, random, sync, cancellationToken);
+            }
             var cache = CreateCache();
             try {
                 while (ids.Count < maxLength) {
@@ -55,7 +60,7 @@ namespace Doji.AI.Transformers {
                     var newIds = ids.GetRange(cache.GetSeqLength(), ids.Count - cache.GetSeqLength());
                     float[] scores = await ForwardAsync(newIds, cache, sync);
                     processors.Process(ids, scores);
-                    int next = config.DoSample ? Multinomial(scores, random) : ArgMax(scores);
+                    int next = config.DoSample ? Multinomial(scores, random.NextDouble()) : ArgMax(scores);
                     ids.Add(next);
                     streamer?.Put(new[] { next });
                     if (stoppingCriteria.IsDone(ids)) {
@@ -70,9 +75,91 @@ namespace Doji.AI.Transformers {
         }
 
         /// <summary>
+        /// The most tokens whose readback is not back yet. A readback takes a few frames, so the steps after a token
+        /// run before the CPU sees it. When a stopping criterion is met, the steps already scheduled are thrown away.
+        /// </summary>
+        private const int TokensInFlight = 4;
+
+        private GpuSampler _sampler;
+
+        /// <summary>
+        /// Generates with the logits processors and the sampling on the GPU (<see cref="GpuSampler"/>): each step
+        /// runs on the token that the step before picked, still on the GPU. The CPU reads each token back
+        /// asynchronously, for the streamer and the stopping criteria. One step is scheduled per frame.
+        /// </summary>
+        private async Task<int[]> GenerateOnGpuAsync(List<int> ids, int maxLength, GenerationConfig config, StoppingCriteriaList stoppingCriteria,
+            BaseStreamer streamer, Random random, bool sync, CancellationToken cancellationToken) {
+            int maxNewTokens = maxLength - ids.Count;
+            var cache = CreateCache();
+            var pending = new Queue<Task<int>>();
+            try {
+                if (maxNewTokens <= 0) {
+                    return ids.ToArray();
+                }
+                cancellationToken.ThrowIfCancellationRequested();
+                var logits = Prefill(ids, cache);
+                var settings = new GpuSampler.Key(config);
+                int vocabSize = logits.shape[-1];
+                if (_sampler == null || !_sampler.Settings.Equals(settings) || _sampler.VocabSize != vocabSize) {
+                    _sampler?.Dispose();
+                    _sampler = null;
+                    _sampler = new GpuSampler(settings, vocabSize);
+                }
+                _sampler.Reset(ids);
+                int sampled = 0;
+                Task<int> Sample(Tensor<float> scores) {
+                    _sampler.Schedule(scores, sampled, config.DoSample ? random.NextDouble() : 0);
+                    sampled++;
+                    return sync ? Task.FromResult(ReadToken(_sampler.Token)) : ReadTokenAsync(_sampler.Token);
+                }
+                pending.Enqueue(Sample(logits));
+                int inFlight = sync ? 1 : TokensInFlight;
+                while (true) {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (sampled < maxNewTokens && pending.Count < inFlight) {
+                        Run(_sampler.Token, cache);
+                        pending.Enqueue(Sample((Tensor<float>)_worker.PeekOutput(_logits)));
+                    }
+                    while (pending.Count > 0 && pending.Peek().IsCompleted) {
+                        int next = await pending.Dequeue();
+                        ids.Add(next);
+                        streamer?.Put(new[] { next });
+                        if (stoppingCriteria.IsDone(ids)) {
+                            return ids.ToArray();
+                        }
+                    }
+                    if (pending.Count == 0 && sampled >= maxNewTokens) {
+                        return ids.ToArray();
+                    }
+                    if (!sync) {
+                        await UnityEngine.Awaitable.NextFrameAsync(cancellationToken);
+                    }
+                }
+            } finally {
+                cache.Dispose();
+                streamer?.End();
+            }
+        }
+
+        private static int ReadToken(Tensor<int> token) {
+            using var cpu = token.ReadbackAndClone();
+            return cpu[0];
+        }
+
+        /// <summary>
+        /// Requests the readback now, so that it reads this token before the next step overwrites it.
+        /// </summary>
+        private static async Task<int> ReadTokenAsync(Tensor<int> token) {
+            using var cpu = await token.ReadbackAndCloneAsync();
+            return cpu[0];
+        }
+
+        /// <summary>
         /// The logits processors that the config asks for, in the order of transformers.
         /// </summary>
-        public LogitsProcessorList GetLogitsProcessor(GenerationConfig config, int promptLength) {
+        public LogitsProcessorList GetLogitsProcessor(GenerationConfig config, int promptLength) => CreateLogitsProcessor(config, promptLength);
+
+        internal static LogitsProcessorList CreateLogitsProcessor(GenerationConfig config, int promptLength) {
             var processors = new LogitsProcessorList();
             if (config.RepetitionPenalty != 1f) {
                 processors.Add(new RepetitionPenaltyLogitsProcessor(config.RepetitionPenalty));
@@ -111,7 +198,7 @@ namespace Doji.AI.Transformers {
             return criteria;
         }
 
-        private static int ArgMax(float[] scores) {
+        internal static int ArgMax(float[] scores) {
             int best = 0;
             for (int i = 1; i < scores.Length; i++) {
                 if (scores[i] > scores[best]) {
@@ -122,11 +209,10 @@ namespace Doji.AI.Transformers {
         }
 
         /// <summary>
-        /// Draws one token from the softmax of the scores.
+        /// Draws one token from the softmax of the scores, with a uniform random number in [0, 1).
         /// </summary>
-        private static int Multinomial(float[] scores, Random random) {
+        internal static int Multinomial(float[] scores, double draw) {
             float[] probabilities = TopPLogitsWarper.Softmax(scores);
-            double draw = random.NextDouble();
             for (int i = 0; i < probabilities.Length; i++) {
                 draw -= probabilities[i];
                 if (draw < 0) {
