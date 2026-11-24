@@ -15,9 +15,10 @@ namespace Doji.AI.Transformers {
         public abstract int GetSeqLength(int layerIdx = 0);
 
         /// <summary>
-        /// The cached keys and values of a layer, shaped [batch, kv_heads, tokens, head_dim].
+        /// The cached keys and values of a layer, shaped [batch, kv_heads, tokens, head_dim]. They are float32
+        /// (<see cref="Tensor{T}"/> of float), or float16 (of short) in a float16 cache.
         /// </summary>
-        public abstract (Tensor<float> Key, Tensor<float> Value) this[int layerIdx] { get; }
+        public abstract (Tensor Key, Tensor Value) this[int layerIdx] { get; }
 
         public abstract void Dispose();
     }

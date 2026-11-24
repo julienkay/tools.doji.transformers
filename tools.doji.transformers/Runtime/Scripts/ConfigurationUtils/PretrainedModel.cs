@@ -59,8 +59,30 @@ namespace Doji.AI.Transformers {
         /// </summary>
         protected PreTrainedModel(ModelFile file, PretrainedConfig config, GenerationConfig generationConfig, BackendType backend)
             : this(file?.Inputs, file?.Outputs, config, generationConfig) {
+            // Like transformers and vLLM, a float16 model keeps its KV cache in float16, which halves its memory.
+            if (backend == BackendType.GPUCompute && file.HasHalfPrecisionWeights) {
+                int layers = config.NumHiddenLayers;
+                var past = new List<string>();
+                var present = new List<string>();
+                for (int i = 0; i < layers; i++) {
+                    past.Add($"past_key_values.{i}.key");
+                    past.Add($"past_key_values.{i}.value");
+                    present.Add($"present.{i}.key");
+                    present.Add($"present.{i}.value");
+                }
+                if (file.UseHalfPrecision(past, present) != 4 * layers) {
+                    throw new InvalidOperationException("The KV cache inputs and outputs of the model are not all float32.");
+                }
+                CacheDataType = DataType.Short;
+            }
             _worker = file.CreateWorker(backend);
         }
+
+        /// <summary>
+        /// The data type of the KV cache: <see cref="DataType.Short"/> (float16) for a model with float16 weights on
+        /// <see cref="BackendType.GPUCompute"/>, otherwise <see cref="DataType.Float"/>.
+        /// </summary>
+        public DataType CacheDataType { get; } = DataType.Float;
 
         private PreTrainedModel(IReadOnlyList<Model.Input> modelInputs, IReadOnlyList<Model.Output> modelOutputs,
             PretrainedConfig config, GenerationConfig generationConfig) {
@@ -117,7 +139,7 @@ namespace Doji.AI.Transformers {
         /// Creates an empty KV cache for this model.
         /// </summary>
         public DynamicCache CreateCache() {
-            return new DynamicCache(Config.NumHiddenLayers, _numKeyValueHeads, _headDim);
+            return new DynamicCache(Config.NumHiddenLayers, _numKeyValueHeads, _headDim, dataType: CacheDataType);
         }
 
         /// <summary>
@@ -177,8 +199,7 @@ namespace Doji.AI.Transformers {
                 throw;
             }
             for (int i = 0; i < cache.NumLayers; i++) {
-                cache.Update((Tensor<float>)_worker.TakeOutput(_presentOutputs[2 * i]),
-                    (Tensor<float>)_worker.TakeOutput(_presentOutputs[2 * i + 1]), i);
+                cache.Update(_worker.TakeOutput(_presentOutputs[2 * i]), _worker.TakeOutput(_presentOutputs[2 * i + 1]), i);
             }
         }
 

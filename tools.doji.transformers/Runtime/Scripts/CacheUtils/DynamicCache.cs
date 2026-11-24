@@ -7,33 +7,45 @@ namespace Doji.AI.Transformers {
     /// </summary>
     public class DynamicCache : Cache {
 
-        private readonly Tensor<float>[] _keys;
-        private readonly Tensor<float>[] _values;
+        private readonly Tensor[] _keys;
+        private readonly Tensor[] _values;
         private readonly TensorShape _empty;
+
+        /// <summary>
+        /// The data type of the keys and values: <see cref="DataType.Float"/>, or <see cref="DataType.Short"/> for
+        /// float16.
+        /// </summary>
+        public DataType DataType { get; }
 
         /// <summary>
         /// Creates an empty cache, with zero tokens per layer.
         /// </summary>
-        public DynamicCache(int numLayers, int numKeyValueHeads, int headDim, int batchSize = 1) {
-            _keys = new Tensor<float>[numLayers];
-            _values = new Tensor<float>[numLayers];
-            var empty = _empty = new TensorShape(batchSize, numKeyValueHeads, 0, headDim);
+        public DynamicCache(int numLayers, int numKeyValueHeads, int headDim, int batchSize = 1, DataType dataType = DataType.Float) {
+            if (dataType != DataType.Float && dataType != DataType.Short) {
+                throw new System.ArgumentException("The cache holds Float or Short (float16) tensors.", nameof(dataType));
+            }
+            DataType = dataType;
+            _keys = new Tensor[numLayers];
+            _values = new Tensor[numLayers];
+            _empty = new TensorShape(batchSize, numKeyValueHeads, 0, headDim);
             for (int i = 0; i < numLayers; i++) {
-                _keys[i] = new Tensor<float>(empty);
-                _values[i] = new Tensor<float>(empty);
+                _keys[i] = Empty();
+                _values[i] = Empty();
             }
         }
 
+        private Tensor Empty() => DataType == DataType.Short ? new Tensor<short>(_empty) : new Tensor<float>(_empty);
+
         public int NumLayers => _keys.Length;
 
-        public override (Tensor<float> Key, Tensor<float> Value) this[int layerIdx] => (_keys[layerIdx], _values[layerIdx]);
+        public override (Tensor Key, Tensor Value) this[int layerIdx] => (_keys[layerIdx], _values[layerIdx]);
 
         public override int GetSeqLength(int layerIdx = 0) => _keys[layerIdx].shape[2];
 
         /// <summary>
         /// Replaces the keys and values of a layer with ones that include the new tokens, and disposes the old ones.
         /// </summary>
-        public void Update(Tensor<float> keyStates, Tensor<float> valueStates, int layerIdx) {
+        public void Update(Tensor keyStates, Tensor valueStates, int layerIdx) {
             _keys[layerIdx]?.Dispose();
             _values[layerIdx]?.Dispose();
             _keys[layerIdx] = keyStates;
@@ -55,8 +67,8 @@ namespace Doji.AI.Transformers {
             for (int i = 0; i < _keys.Length; i++) {
                 _keys[i]?.Dispose();
                 _values[i]?.Dispose();
-                _keys[i] = new Tensor<float>(_empty);
-                _values[i] = new Tensor<float>(_empty);
+                _keys[i] = Empty();
+                _values[i] = Empty();
             }
         }
 
