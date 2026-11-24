@@ -129,6 +129,7 @@ GameObject:
   m_Component:
   - component: {fileID: 854953395}
   - component: {fileID: 854953396}
+  - component: {fileID: 854953397}
   m_Layer: 0
   m_Name: Text Generation
   m_TagString: Untagged
@@ -163,6 +164,35 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 869f64df865bd75498fcd3f3b0736dbe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ModelIds:
+  - julienkay/SmolLM2-135M-Instruct-onnx
+  MaxNewTokens: 256
+  DoSample: 1
+  Temperature: 0.2
+  TopP: 0.9
+--- !u!114 &854953397
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 854953393}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 19102, guid: 0000000000000000e000000000000000, type: 0}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
+  m_PanelSettings: {fileID: 11400000, guid: f55e449a0854e6740b28c6fcef8ba952, type: 2}
+  m_ParentUI: {fileID: 0}
+  sourceAsset: {fileID: 9197481963319205126, guid: 30f7d23d0fa214c43991415ac9eb3622, type: 3}
+  m_SortingOrder: 0
+  m_Position: 0
+  m_WorldSpaceSizeMode: 1
+  m_WorldSpaceWidth: 1920
+  m_WorldSpaceHeight: 1080
+  m_PivotReferenceSize: 0
+  m_Pivot: 0
+  m_WorldSpaceCollider: {fileID: 0}
 --- !u!1 &1298099026
 GameObject:
   m_ObjectHideFlags: 0
@@ -280,14 +310,14 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1443616451}
   m_Enabled: 1
-  serializedVersion: 11
+  serializedVersion: 13
   m_Type: 1
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
   m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
-  m_CookieSize: 10
+  m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
     m_Type: 2
     m_Resolution: -1
@@ -332,7 +362,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShadowRadius: 0
+  m_ShapeRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
