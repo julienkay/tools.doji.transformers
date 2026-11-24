@@ -56,17 +56,26 @@ The models are plain ONNX exports with the input and output names of optimum (`i
 
 Rough numbers for greedy generation in Play mode with one frame after each token, as the sample runs. Each model generates 64 tokens after a short chat prompt.
 
-| Model | Tokens/s | Peak VRAM | Peak RAM |
+| Model | Tokens/s<br>D3D12 / D3D11 | Peak VRAM<br>D3D12 / D3D11 | Peak RAM<br>D3D12 / D3D11 |
 |---|---|---|---|
-| [SmolLM2-135M-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-135M-Instruct-sentis-float16) | 13.2 | 0.5 GB | +0.3 GB |
-| [SmolLM2-360M-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-360M-Instruct-sentis-float16) | 11.2 | 1.1 GB | +0.4 GB |
-| [SmolLM2-1.7B-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-1.7B-Instruct-sentis-float16) | 10.2 | 4.0 GB | +0.5 GB |
-| [Phi-3-mini-4k-instruct-sentis-uint8](https://huggingface.co/julienkay/Phi-3-mini-4k-instruct-sentis-uint8) | 6.7 | 4.4 GB | +0.3 GB |
-| [Phi-3-mini-4k-instruct-sentis-float16](https://huggingface.co/julienkay/Phi-3-mini-4k-instruct-sentis-float16) | 6.0 | 7.8 GB | +0.5 GB |
+| [SmolLM2-135M-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-135M-Instruct-sentis-float16) | 13.2 / 21.8 | 0.5 / 0.5 GB | +0.3 / +0.3 GB |
+| [SmolLM2-360M-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-360M-Instruct-sentis-float16) | 11.2 / 19.0 | 1.1 / 1.0 GB | +0.4 / +0.3 GB |
+| [SmolLM2-1.7B-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-1.7B-Instruct-sentis-float16) | 10.2 / 11.0 | 4.0 / 4.0 GB | +0.5 / +0.6 GB |
+| [Phi-3-mini-4k-instruct-sentis-uint8](https://huggingface.co/julienkay/Phi-3-mini-4k-instruct-sentis-uint8) | 6.7 / 7.4 | 4.4 / 4.5 GB | +0.3 / +0.4 GB |
+| [Phi-3-mini-4k-instruct-sentis-float16](https://huggingface.co/julienkay/Phi-3-mini-4k-instruct-sentis-float16) | 6.0 / 6.5 | 7.8 / 7.7 GB | +0.5 / +0.6 GB |
 
-- Peak VRAM is the GPU memory that the model adds, from `nvidia-smi`.
+Long prompts with Phi-3-mini-4k-instruct-sentis-float16, 4 new tokens after the prompt:
+
+| Prompt | D3D12 | D3D11 |
+|---|---|---|
+| 1024 tokens | 3.6 tokens/s, 10.3 GB VRAM | 4.2 tokens/s, 9.4 GB VRAM |
+| 2048 tokens | 2.1 tokens/s, 11.6 GB VRAM (at the limit of the GPU) | 3.0 tokens/s, 9.7 GB VRAM |
+| 3072 tokens | not run: 2048 tokens already fill the GPU | 2.2 tokens/s, 10.3 GB VRAM (11.5 GB peak) |
+
+- Peak VRAM is the GPU memory that the model adds, from `nvidia-smi`. In the long-prompt table, VRAM is the memory of the whole GPU while the model holds its cache.
 - Peak RAM is the resident memory (working set) that the Editor process adds while it loads and runs the model.
-- Measured on 2026-11-24 with `BackendType.GPUCompute`, Unity 6000.6.4f1, an NVIDIA GeForce RTX 3060 (12 GB) and an Intel Core i7-4790K.
+- D3D12 is the default graphics API of Unity 6 on Windows. On D3D12, GPU memory that a model frees during a long prompt often stays allocated, so long prompts need more VRAM. To use D3D11, turn off *Auto Graphics API for Windows* in the Player settings and put Direct3D11 first, or start the Editor with `-force-d3d11`.
+- Measured on 2026-11-24 with `BackendType.GPUCompute`, Unity 6000.6.4f1, an NVIDIA GeForce RTX 3060 (12 GB) and an Intel Core i7-4790K. The D3D11 numbers come from one run per model.
 
 ## Roadmap:
 
