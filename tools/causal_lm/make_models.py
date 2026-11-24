@@ -123,9 +123,20 @@ def export_onnx(model, path):
             "position_ids": {0: "batch", 1: "seq"}, "logits": {0: "batch", 1: "seq"}}
     axes.update({name: {0: "batch", 2: "past"} for name in past_names})
     axes.update({name: {0: "batch", 2: "total"} for name in present_names})
+    folder = os.path.dirname(os.path.abspath(path))
+    before = set(os.listdir(folder))
     with torch.no_grad():
         torch.onnx.export(Step(model), args, path, input_names=["input_ids", "attention_mask", "position_ids"] + past_names,
                           output_names=["logits"] + present_names, dynamic_axes=axes, opset_version=17, dynamo=False)
+    # Above 2 GB, torch writes each weight to a file of its own. Pack them into one model.onnx_data, which AI Model
+    # Hub takes along with model.onnx.
+    weights = set(os.listdir(folder)) - before - {os.path.basename(path)}
+    if weights:
+        import onnx
+        onnx.save_model(onnx.load(path), path, save_as_external_data=True, all_tensors_to_one_file=True,
+                        location=os.path.basename(path) + "_data", size_threshold=1024)
+        for name in weights:
+            os.remove(os.path.join(folder, name))
 
 
 class OnnxLM:
