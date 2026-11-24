@@ -18,6 +18,14 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
         };
         public int MaxNewTokens = 256;
 
+        /// <summary>
+        /// Sampling settings, as the model card of SmolLM2 recommends. Greedy decoding (DoSample off) makes small
+        /// models repeat earlier answers of the chat.
+        /// </summary>
+        public bool DoSample = true;
+        public float Temperature = 0.2f;
+        public float TopP = 0.9f;
+
         private PreTrainedModel _model;
         private PreTrainedTokenizerBase _tokenizer;
         private readonly List<ChatMessage> _messages = new();
@@ -83,6 +91,9 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
                 var streamer = new TextStreamer(_tokenizer, text => _reply += text, skipPrompt: true);
                 var config = _model.GenerationConfig.Clone();
                 config.MaxNewTokens = MaxNewTokens;
+                config.DoSample = DoSample;
+                config.Temperature = Temperature;
+                config.TopP = TopP;
                 float start = Time.realtimeSinceStartup;
                 int[] sequence = await _model.GenerateAsync(promptIds, config, streamer, cancellationToken: cancel.Token);
                 int newTokens = sequence.Length - promptIds.Length;
