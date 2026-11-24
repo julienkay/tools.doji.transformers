@@ -19,7 +19,18 @@ With the sampling on the GPU, the token that a step picks stays on the GPU as th
 - Min new tokens reads a flag (1 while fewer than `min_new_tokens` tokens are generated), set by the CPU per step.
 - Multinomial sampling reads a uniform random number from the CPU's `System.Random`, per step. The token is the first one in vocabulary order whose cumulative probability is above the number. This is the inverse transform that `Multinomial` does on the CPU, so a seeded `Random` gives the same draws on both paths. Float rounding of the cumulative sum (float32 on the GPU, float32 summed into a double on the CPU) can change the token only when the number falls within rounding of a boundary.
 - The token is copied out of the sampler's worker (`CopyOutput`), so the next run of either worker can reuse its own buffers.
-- `GenerateOnGpuAsync` keeps up to `TokensInFlight` (4) steps scheduled ahead of the token that the CPU last read. When a stopping criterion is met, the steps already scheduled are thrown away with the cache. `Generate` (sync) keeps one step in flight and reads each token with a blocking readback.
+- `GenerateOnGpuAsync` schedules steps ahead of the token that the CPU last read. Each readback is requested right after its sampler step, so it reads that step's token even though the next step overwrites the buffer. When a stopping criterion is met, the steps already scheduled are thrown away with the cache. `Generate` (sync) keeps one step in flight and reads each token with a blocking readback.
+
+## Steps per frame
+
+`StepPacer` sets how many steps `GenerateAsync` schedules per frame, within the limits of `PreTrainedModel.Pacing` (`GenerationPacing`):
+
+- It doubles the steps per frame (TCP slow start) until a frame is slow, then adds one step per frame. It halves the steps when a frame takes more than 1.5 times the shortest frame of the generation, or when a token comes back more than `ReadbackFrames + 1` frames after its step (the GPU has more work queued than it does in a frame). It grows only in a frame that scheduled all its steps.
+- `GenerationPacing.MaxMillisecondsPerFrame` (default 4) caps the main-thread time for scheduling steps in a frame. The first step of a frame is always scheduled. For a small model, scheduling on the CPU (Inference Engine's per-layer dispatch) is the limit, not the GPU, so this budget sets the speed.
+- `GenerationPacing.MaxStepsPerFrame` (default 32) caps the steps per frame.
+- The in-flight window is `StepsPerFrame * (ReadbackFrames + 1)`, at least 4: a readback takes about 3 frames.
+- A model whose one step takes longer than a frame runs one step per frame, and the frames get longer. Spreading the layers of one step across frames would keep them short. Inference Engine's `Worker.ScheduleIterable` executes the command buffer after every layer, which costs more than it saves, so that needs a variant in `tools.doji.sentis-utils` that executes once per group of layers.
+- `GenerationPacing` has no counterpart in transformers. It changes when the tokens come, not which tokens.
 
 ## Differences from the CPU processors
 

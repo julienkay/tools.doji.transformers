@@ -73,6 +73,15 @@ In a release Player (vSync on), `GenerateAsync` picks the tokens on the GPU and 
 
 Sampling uses temperature 0.7, top-k 50, top-p 0.9 and repetition penalty 1.1. The Play mode table above was measured before the sampling moved to the GPU, when each token took about 3 frames.
 
+A small model runs several steps per frame. `PreTrainedModel.Pacing` caps the main-thread time that `GenerateAsync` spends on scheduling steps per frame (`MaxMillisecondsPerFrame`, 4 ms by default). julienkay/tiny-random-LlamaForCausalLM-onnx (2 layers), 512 greedy tokens in a release Player with vSync on:
+
+| `MaxMillisecondsPerFrame` | D3D12 | D3D11 |
+|---|---|---|
+| 1 | 60 tokens/s, 16.7 ms/frame | 60 tokens/s, 16.7 ms/frame |
+| 4 | 110 tokens/s, 16.7 ms/frame | 79 tokens/s, 16.7 ms/frame |
+| 8 | 153 tokens/s, 16.7 ms/frame | 170 tokens/s, 16.7 ms/frame |
+| 16 | 181 tokens/s, 18.2 ms/frame | 353 tokens/s, 17.5 ms/frame |
+
 Long prompts with Phi-3-mini-4k-instruct-sentis-float16, 4 new tokens after the prompt:
 
 | Prompt | D3D12 | D3D11 |

@@ -5,6 +5,6 @@ These documents describe how the package works and why. They are not work plans:
 | Document | Subject |
 |---|---|
 | [kv-cache.md](kv-cache.md) | KV cache, single-copy cache, float16 cache, chunked prefill, D3D12 fragmentation |
-| [gpu-sampling.md](gpu-sampling.md) | Logits processors and sampling on the GPU, pipelined token readback |
+| [gpu-sampling.md](gpu-sampling.md) | Logits processors and sampling on the GPU, pipelined token readback, steps per frame |
 
 The Inference Engine features this package builds on (ModelFile, FittedModelStorage, HalfPrecision, attention, ...) are described in `internal-docs/` of `G:\Unity\tools.doji.sentis-utils`.

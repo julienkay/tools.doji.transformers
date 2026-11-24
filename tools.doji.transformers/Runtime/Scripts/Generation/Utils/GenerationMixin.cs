@@ -74,24 +74,29 @@ namespace Doji.AI.Transformers {
             return ids.ToArray();
         }
 
-        /// <summary>
-        /// The most tokens whose readback is not back yet. A readback takes a few frames, so the steps after a token
-        /// run before the CPU sees it. When a stopping criterion is met, the steps already scheduled are thrown away.
-        /// </summary>
-        private const int TokensInFlight = 4;
-
         private GpuSampler _sampler;
+        private GenerationPacing _pacing = new GenerationPacing();
+
+        /// <summary>
+        /// How much work <see cref="GenerateAsync(IReadOnlyList{int}, GenerationConfig, BaseStreamer, Random, CancellationToken)"/>
+        /// does per frame on the GPU backend. It is read when a generation starts.
+        /// </summary>
+        public GenerationPacing Pacing {
+            get => _pacing;
+            set => _pacing = value ?? throw new ArgumentNullException(nameof(value));
+        }
 
         /// <summary>
         /// Generates with the logits processors and the sampling on the GPU (<see cref="GpuSampler"/>): each step
         /// runs on the token that the step before picked, still on the GPU. The CPU reads each token back
-        /// asynchronously, for the streamer and the stopping criteria. One step is scheduled per frame.
+        /// asynchronously, for the streamer and the stopping criteria. <see cref="StepPacer"/> sets how many steps
+        /// are scheduled per frame. When a stopping criterion is met, the steps already scheduled are thrown away.
         /// </summary>
         private async Task<int[]> GenerateOnGpuAsync(List<int> ids, int maxLength, GenerationConfig config, StoppingCriteriaList stoppingCriteria,
             BaseStreamer streamer, Random random, bool sync, CancellationToken cancellationToken) {
             int maxNewTokens = maxLength - ids.Count;
             var cache = CreateCache();
-            var pending = new Queue<Task<int>>();
+            var pending = new Queue<(Task<int> token, int frame)>();
             try {
                 if (maxNewTokens <= 0) {
                     return ids.ToArray();
@@ -107,21 +112,32 @@ namespace Doji.AI.Transformers {
                 }
                 _sampler.Reset(ids);
                 int sampled = 0;
-                Task<int> Sample(Tensor<float> scores) {
+                void Sample(Tensor<float> scores) {
                     _sampler.Schedule(scores, sampled, config.DoSample ? random.NextDouble() : 0);
                     sampled++;
-                    return sync ? Task.FromResult(ReadToken(_sampler.Token)) : ReadTokenAsync(_sampler.Token);
+                    var token = sync ? Task.FromResult(ReadToken(_sampler.Token)) : ReadTokenAsync(_sampler.Token);
+                    pending.Enqueue((token, sync ? 0 : UnityEngine.Time.frameCount));
                 }
-                pending.Enqueue(Sample(logits));
-                int inFlight = sync ? 1 : TokensInFlight;
+                Sample(logits);
+                var pacer = sync ? null : new StepPacer(Pacing);
+                var clock = new System.Diagnostics.Stopwatch();
                 while (true) {
                     cancellationToken.ThrowIfCancellationRequested();
-                    if (sampled < maxNewTokens && pending.Count < inFlight) {
+                    int steps = 0;
+                    clock.Restart();
+                    int stepsPerFrame = pacer?.StepsPerFrame ?? 1;
+                    int inFlight = pacer?.InFlight ?? 1;
+                    while (steps < stepsPerFrame && sampled < maxNewTokens && pending.Count < inFlight
+                        && (steps == 0 || clock.Elapsed.TotalMilliseconds < pacer.MaxMillisecondsPerFrame)) {
                         Run(_sampler.Token, cache);
-                        pending.Enqueue(Sample((Tensor<float>)_worker.PeekOutput(_logits)));
+                        Sample((Tensor<float>)_worker.PeekOutput(_logits));
+                        steps++;
                     }
-                    while (pending.Count > 0 && pending.Peek().IsCompleted) {
-                        int next = await pending.Dequeue();
+                    int latency = -1;
+                    while (pending.Count > 0 && pending.Peek().token.IsCompleted) {
+                        var (token, frame) = pending.Dequeue();
+                        int next = await token;
+                        latency = sync ? 0 : UnityEngine.Time.frameCount - frame;
                         ids.Add(next);
                         streamer?.Put(new[] { next });
                         if (stoppingCriteria.IsDone(ids)) {
@@ -133,6 +149,7 @@ namespace Doji.AI.Transformers {
                     }
                     if (!sync) {
                         await UnityEngine.Awaitable.NextFrameAsync(cancellationToken);
+                        pacer.EndFrame(UnityEngine.Time.unscaledDeltaTime, latency, limited: steps == stepsPerFrame);
                     }
                 }
             } finally {
