@@ -54,7 +54,7 @@ The models are plain ONNX exports with the input and output names of optimum (`i
 
 ### Performance
 
-Rough numbers for greedy generation on the GPU (`BackendType.GPUCompute`), in Play mode with one frame after each token, as the sample runs. Each model generates 64 tokens after a short chat prompt.
+Rough numbers for greedy generation in Play mode with one frame after each token, as the sample runs. Each model generates 64 tokens after a short chat prompt.
 
 | Model | Tokens/s | Peak VRAM | Peak RAM |
 |---|---|---|---|
@@ -66,7 +66,7 @@ Rough numbers for greedy generation on the GPU (`BackendType.GPUCompute`), in Pl
 
 - Peak VRAM is the GPU memory that the model adds, from `nvidia-smi`.
 - Peak RAM is the private memory that the Editor process adds while it loads and runs the model.
-- Measured on 2026-11-24 with Unity 6000.6.4f1, an NVIDIA GeForce RTX 3060 (12 GB) and an Intel Core i7-4790K.
+- Measured on 2026-11-24 with `BackendType.GPUCompute`, Unity 6000.6.4f1, an NVIDIA GeForce RTX 3060 (12 GB) and an Intel Core i7-4790K.
 
 ## Roadmap:
 
