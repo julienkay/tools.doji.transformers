@@ -58,14 +58,14 @@ Rough numbers for greedy generation in Play mode with one frame after each token
 
 | Model | Tokens/s | Peak VRAM | Peak RAM |
 |---|---|---|---|
-| [SmolLM2-135M-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-135M-Instruct-sentis-float16) | 10.8 | 0.3 GB | +1.0 GB |
-| [SmolLM2-360M-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-360M-Instruct-sentis-float16) | 8.1 | 1.3 GB | +1.7 GB |
-| [SmolLM2-1.7B-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-1.7B-Instruct-sentis-float16) | 8.0 | 4.2 GB | +7.4 GB |
-| [Phi-3-mini-4k-instruct-sentis-uint8](https://huggingface.co/julienkay/Phi-3-mini-4k-instruct-sentis-uint8) | 6.4 | 4.6 GB | +7.5 GB |
-| [Phi-3-mini-4k-instruct-sentis-float16](https://huggingface.co/julienkay/Phi-3-mini-4k-instruct-sentis-float16) | 5.8 | 8.0 GB | +15.2 GB |
+| [SmolLM2-135M-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-135M-Instruct-sentis-float16) | 13.2 | 0.5 GB | +0.3 GB |
+| [SmolLM2-360M-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-360M-Instruct-sentis-float16) | 11.2 | 1.1 GB | +0.4 GB |
+| [SmolLM2-1.7B-Instruct-sentis-float16](https://huggingface.co/julienkay/SmolLM2-1.7B-Instruct-sentis-float16) | 10.2 | 4.0 GB | +0.5 GB |
+| [Phi-3-mini-4k-instruct-sentis-uint8](https://huggingface.co/julienkay/Phi-3-mini-4k-instruct-sentis-uint8) | 6.7 | 4.4 GB | +0.3 GB |
+| [Phi-3-mini-4k-instruct-sentis-float16](https://huggingface.co/julienkay/Phi-3-mini-4k-instruct-sentis-float16) | 6.0 | 7.8 GB | +0.5 GB |
 
 - Peak VRAM is the GPU memory that the model adds, from `nvidia-smi`.
-- Peak RAM is the private memory that the Editor process adds while it loads and runs the model.
+- Peak RAM is the resident memory (working set) that the Editor process adds while it loads and runs the model.
 - Measured on 2026-11-24 with `BackendType.GPUCompute`, Unity 6000.6.4f1, an NVIDIA GeForce RTX 3060 (12 GB) and an Intel Core i7-4790K.
 
 ## Roadmap:
