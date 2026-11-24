@@ -89,5 +89,7 @@ Thumbs.db
 # custom #
 # ====== #
 /[Pp]ackages/[Cc]om.unity.asset-store-tools*
-# Local scratch: test scripts, old Resources models
-/[Aa]ssets/
+# Local scratch: test scripts, imported samples, old Resources models. Only the render pipeline settings are tracked.
+/[Aa]ssets/*
+!/[Aa]ssets/Settings/
+!/[Aa]ssets/Settings.meta
