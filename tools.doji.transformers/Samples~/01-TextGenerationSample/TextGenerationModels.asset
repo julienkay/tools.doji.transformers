@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   <Version>k__BackingField: 1
   <Models>k__BackingField:
-  - <Id>k__BackingField: julienkay/SmolLM2-360M-Instruct-onnx
-    <Revision>k__BackingField: e12fa8bc819e071bc606c8b91e2c2966464bcb08
+  - <Id>k__BackingField: julienkay/SmolLM2-360M-Instruct-sentis-float16
+    <Revision>k__BackingField: 554da3a5a991a8b94f794ca4930d1aca3c6e9ba4
     <Optional>k__BackingField: 0
     <Files>k__BackingField:
     - <Path>k__BackingField: config.json
@@ -53,10 +53,10 @@ MonoBehaviour:
       <Label>k__BackingField: 
       <Quantization>k__BackingField: 
       <InputShapes>k__BackingField: []
-    - <Path>k__BackingField: model.onnx
+    - <Path>k__BackingField: model.sentis
       <Optional>k__BackingField: 0
       <Label>k__BackingField: 
-      <Quantization>k__BackingField: float16
+      <Quantization>k__BackingField: 
       <InputShapes>k__BackingField: []
   - <Id>k__BackingField: julienkay/SmolLM2-1.7B-Instruct-onnx
     <Revision>k__BackingField: 24e9d96fa86a7bada01ae2763b2df1318ca47397
@@ -107,8 +107,8 @@ MonoBehaviour:
       <Label>k__BackingField: 
       <Quantization>k__BackingField: 
       <InputShapes>k__BackingField: []
-  - <Id>k__BackingField: julienkay/SmolLM2-135M-Instruct-onnx
-    <Revision>k__BackingField: 4d0daaa025676ba7a9b682e2720110cbf7fb021f
+  - <Id>k__BackingField: julienkay/SmolLM2-135M-Instruct-sentis-float16
+    <Revision>k__BackingField: e95d3e5219270b68b1c29d9b48a3053db030c3f7
     <Optional>k__BackingField: 0
     <Files>k__BackingField:
     - <Path>k__BackingField: config.json
@@ -146,10 +146,10 @@ MonoBehaviour:
       <Label>k__BackingField: 
       <Quantization>k__BackingField: 
       <InputShapes>k__BackingField: []
-    - <Path>k__BackingField: model.onnx
+    - <Path>k__BackingField: model.sentis
       <Optional>k__BackingField: 0
       <Label>k__BackingField: 
-      <Quantization>k__BackingField: float16
+      <Quantization>k__BackingField: 
       <InputShapes>k__BackingField: []
   - <Id>k__BackingField: julienkay/Phi-3-mini-4k-instruct-onnx
     <Revision>k__BackingField: d54f3876addc7e569ea04f72c3466aad495fd045

@@ -10,13 +10,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - Text generation with decoder-only language models exported to plain ONNX (the input and output names of optimum): `AutoModelForCausalLM`, `LlamaForCausalLM` (for example SmolLM2) and `Phi3ForCausalLM`.
+- `FromPretrained` loads `model.sentis` when the repository has it, and `model.onnx` otherwise.
 - `PreTrainedModel.GenerateAsync` and `Generate`, like transformers' `generate` with greedy decoding or sampling: a KV cache on the GPU (`DynamicCache`), the logits processors for repetition penalty, minimum new tokens, temperature, top-k, top-p and min-p, and stopping at the maximum length, the maximum time or an end-of-sequence token.
 - `TextStreamer`, which passes on the text as it is generated.
 - `TokenizersBackend`, the tokenizer of transformers v5: it runs the `Tokenizer` of `tools.doji.tokenizers`, a C# port of the Hugging Face tokenizers library, and loads any `tokenizer.json` (BPE, Unigram, WordPiece and WordLevel models).
 - `Qwen2Tokenizer`, and truncation, padding, pairs and batches as transformers v5 does them.
 - `ApplyChatTemplate` for ChatML and Phi-3 chat templates.
 - `AutoTokenizer.FromPretrainedAsync`, which picks the tokenizer class from the model type and the tokenizer config as transformers v5 does.
-- A text generation sample: a chat with SmolLM2-360M-Instruct or SmolLM2-135M-Instruct, which replaces the Phi-3 sample. SmolLM2-1.7B-Instruct and Phi-3-mini are optional models of the sample: turn them on in AI Model Hub to download them. Model Hub converts the SmolLM2 models to float16, which gives the answers of float32 at half the memory, and Phi-3-mini to uint8 (3.8 GB). The sample ships a Model Hub manifest asset, so Model Hub downloads the models after the import. Its UI is a UI Toolkit document: chat bubbles that stream the reply, a Stop button, and the sampling settings of the model card. It works with any render pipeline.
+- A text generation sample: a chat with SmolLM2-360M-Instruct or SmolLM2-135M-Instruct, which replaces the Phi-3 sample. SmolLM2-1.7B-Instruct and Phi-3-mini are optional models of the sample: turn them on in AI Model Hub to download them. SmolLM2-360M and SmolLM2-135M come as float16 `.sentis` files (julienkay/SmolLM2-360M-Instruct-sentis-float16 and julienkay/SmolLM2-135M-Instruct-sentis-float16), which give the answers of float32 at half the memory and load without conversion. Model Hub converts SmolLM2-1.7B to float16 and Phi-3-mini to uint8 (3.8 GB). The sample ships a Model Hub manifest asset, so Model Hub downloads the models after the import. Its UI is a UI Toolkit document: chat bubbles that stream the reply, a Stop button, and the sampling settings of the model card. It works with any render pipeline.
 - Tests that compare a tiny random Llama model with onnxruntime and transformers, and the tokenizers with the official ones on many edge cases.
 
 ### Changed

@@ -17,6 +17,11 @@ namespace Doji.AI.Transformers {
     public abstract partial class PreTrainedModel : IDisposable {
 
         public const string MODEL_NAME = "model.onnx";
+
+        /// <summary>
+        /// The model converted to Inference Engine's format. Repositories with this file load it without conversion.
+        /// </summary>
+        public const string SENTIS_MODEL_NAME = "model.sentis";
         public const string CONFIG_NAME = "config.json";
         public const string GENERATION_CONFIG_NAME = "generation_config.json";
 
@@ -102,7 +107,7 @@ namespace Doji.AI.Transformers {
             // Like transformers' GenerationConfig.from_model_config: config.json has the special token ids too.
             var generationConfig = GenerationConfig.Deserialize(await files.ReadTextAsync(
                 files.Has(GENERATION_CONFIG_NAME) ? GENERATION_CONFIG_NAME : CONFIG_NAME));
-            using var file = await files.OpenModelAsync(MODEL_NAME);
+            using var file = await files.OpenModelAsync(files.Has(SENTIS_MODEL_NAME) ? SENTIS_MODEL_NAME : MODEL_NAME);
             T result = create(file, config, generationConfig, backend);
             result.ModelId = files.ModelId;
             return result;

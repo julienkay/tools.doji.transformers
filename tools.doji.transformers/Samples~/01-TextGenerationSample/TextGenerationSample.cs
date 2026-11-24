@@ -20,9 +20,9 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
         /// are optional there: turn them on in AI Model Hub to download them.
         /// </summary>
         public string[] ModelIds = {
-            "julienkay/SmolLM2-360M-Instruct-onnx",
+            "julienkay/SmolLM2-360M-Instruct-sentis-float16",
             "julienkay/SmolLM2-1.7B-Instruct-onnx",
-            "julienkay/SmolLM2-135M-Instruct-onnx",
+            "julienkay/SmolLM2-135M-Instruct-sentis-float16",
             "julienkay/Phi-3-mini-4k-instruct-onnx",
         };
         public int MaxNewTokens = 256;
@@ -117,7 +117,12 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
 
         private static string DisplayName(string modelId) {
             string name = modelId.Split('/').Last();
-            return name.EndsWith("-onnx") ? name[..^5] : name;
+            foreach (string suffix in new[] { "-onnx", "-sentis-float16" }) {
+                if (name.EndsWith(suffix)) {
+                    return name[..^suffix.Length];
+                }
+            }
+            return name;
         }
 
         private void OnInputKey(KeyDownEvent evt) {
