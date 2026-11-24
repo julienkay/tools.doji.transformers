@@ -58,8 +58,8 @@ MonoBehaviour:
       <Label>k__BackingField: 
       <Quantization>k__BackingField: 
       <InputShapes>k__BackingField: []
-  - <Id>k__BackingField: julienkay/SmolLM2-1.7B-Instruct-onnx
-    <Revision>k__BackingField: 24e9d96fa86a7bada01ae2763b2df1318ca47397
+  - <Id>k__BackingField: julienkay/SmolLM2-1.7B-Instruct-sentis-float16
+    <Revision>k__BackingField: 057794d912a72b07d1a2aaacde552c137d1fa0e2
     <Optional>k__BackingField: 1
     <Files>k__BackingField:
     - <Path>k__BackingField: config.json
@@ -97,12 +97,7 @@ MonoBehaviour:
       <Label>k__BackingField: 
       <Quantization>k__BackingField: 
       <InputShapes>k__BackingField: []
-    - <Path>k__BackingField: model.onnx
-      <Optional>k__BackingField: 0
-      <Label>k__BackingField: 
-      <Quantization>k__BackingField: float16
-      <InputShapes>k__BackingField: []
-    - <Path>k__BackingField: model.onnx_data
+    - <Path>k__BackingField: model.sentis
       <Optional>k__BackingField: 0
       <Label>k__BackingField: 
       <Quantization>k__BackingField: 

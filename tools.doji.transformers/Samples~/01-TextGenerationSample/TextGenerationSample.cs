@@ -21,7 +21,7 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
         /// </summary>
         public string[] ModelIds = {
             "julienkay/SmolLM2-360M-Instruct-sentis-float16",
-            "julienkay/SmolLM2-1.7B-Instruct-onnx",
+            "julienkay/SmolLM2-1.7B-Instruct-sentis-float16",
             "julienkay/SmolLM2-135M-Instruct-sentis-float16",
             "julienkay/Phi-3-mini-4k-instruct-onnx",
         };
