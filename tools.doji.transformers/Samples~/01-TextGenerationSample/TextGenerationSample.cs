@@ -24,6 +24,7 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
             "julienkay/SmolLM2-1.7B-Instruct-sentis-float16",
             "julienkay/SmolLM2-135M-Instruct-sentis-float16",
             "julienkay/Phi-3-mini-4k-instruct-sentis-uint8",
+            "julienkay/Phi-3-mini-4k-instruct-sentis-float16",
         };
         public int MaxNewTokens = 256;
 

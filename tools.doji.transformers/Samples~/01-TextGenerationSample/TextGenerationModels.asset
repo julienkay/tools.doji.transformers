@@ -190,3 +190,47 @@ MonoBehaviour:
       <Label>k__BackingField: 
       <Quantization>k__BackingField: 
       <InputShapes>k__BackingField: []
+  - <Id>k__BackingField: julienkay/Phi-3-mini-4k-instruct-sentis-float16
+    <Revision>k__BackingField: 77f11d7a443be6cbbf117a377297487030aaf9f0
+    <Optional>k__BackingField: 1
+    <Files>k__BackingField:
+    - <Path>k__BackingField: config.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: generation_config.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: tokenizer.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: tokenizer_config.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: special_tokens_map.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: tokenizer.model
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: added_tokens.json
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
+    - <Path>k__BackingField: model.sentis
+      <Optional>k__BackingField: 0
+      <Label>k__BackingField: 
+      <Quantization>k__BackingField: 
+      <InputShapes>k__BackingField: []
