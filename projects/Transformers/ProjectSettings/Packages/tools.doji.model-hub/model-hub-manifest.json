@@ -6,6 +6,10 @@
       "revision": "1675db936b735d669df5a25bb238179b110486e2"
     },
     {
+      "id": "julienkay/tiny-random-Phi3ForCausalLM-onnx",
+      "revision": "280ba0d6f98d05922e9671d5f736634e74fd548d"
+    },
+    {
       "id": "julienkay/SmolLM2-135M-Instruct-onnx",
       "revision": "4d0daaa025676ba7a9b682e2720110cbf7fb021f"
     }

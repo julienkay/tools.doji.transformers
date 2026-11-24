@@ -6,27 +6,35 @@ using Unity.InferenceEngine;
 namespace Doji.AI.Transformers.Editor.Tests {
 
     /// <summary>
-    /// Runs the tiny Llama model and compares it with onnxruntime and transformers.
+    /// Runs the tiny models and compares them with onnxruntime and transformers.
     /// The reference data comes from tools/causal_lm/make_models.py.
     /// </summary>
-    [TestFixture(BackendType.GPUCompute)]
-    [TestFixture(BackendType.CPU)]
+    [TestFixture(TinyModels.Llama, "tiny_llama", BackendType.GPUCompute)]
+    [TestFixture(TinyModels.Llama, "tiny_llama", BackendType.CPU)]
+    [TestFixture(TinyModels.Phi3, "tiny_phi3", BackendType.GPUCompute)]
+    [TestFixture(TinyModels.Phi3, "tiny_phi3", BackendType.CPU)]
     public class CausalLMTest {
 
+        private readonly string _modelId, _references;
         private readonly BackendType _backend;
         private PreTrainedModel _model;
         private PreTrainedTokenizerBase _tokenizer;
-        private int[] _prompt;
+        private int[] _prompt, _greedy;
+        private int _eos;
 
-        public CausalLMTest(BackendType backend) {
+        public CausalLMTest(string modelId, string references, BackendType backend) {
+            _modelId = modelId;
+            _references = references;
             _backend = backend;
         }
 
         [OneTimeSetUp]
         public void Load() {
-            _model = AutoModelForCausalLM.FromPretrained(TinyModels.Llama, _backend);
-            _tokenizer = AutoTokenizer.FromPretrained(TinyModels.Llama);
-            _prompt = TestUtils.LoadInts("tiny_llama_prompt_ids");
+            _model = AutoModelForCausalLM.FromPretrained(_modelId, _backend);
+            _tokenizer = AutoTokenizer.FromPretrained(_modelId);
+            _prompt = TestUtils.LoadInts(_references + "_prompt_ids");
+            _greedy = TestUtils.LoadInts(_references + "_greedy");
+            _eos = _model.GenerationConfig.EosTokenId[0];
         }
 
         [OneTimeTearDown]
@@ -34,11 +42,21 @@ namespace Doji.AI.Transformers.Editor.Tests {
             _model?.Dispose();
         }
 
+        /// <summary>
+        /// AutoModelForCausalLM picks the class of <c>architectures</c>, and AutoTokenizer the class transformers v5
+        /// picks: the tokenizer_config of SmolLM2 names GPT2Tokenizer, and Phi-3 loads its tokenizer.json directly.
+        /// </summary>
         [Test]
-        public void AutoClasses_PickLlama() {
-            Assert.That(_model, Is.TypeOf<LlamaForCausalLM>());
-            Assert.That(_tokenizer, Is.TypeOf<GPT2Tokenizer>());
-            Assert.That(_model.GenerationConfig.EosTokenId, Is.EqualTo(new[] { 2 }));
+        public void AutoClasses_PickTheClassesOfTransformers() {
+            if (_modelId == TinyModels.Llama) {
+                Assert.That(_model, Is.TypeOf<LlamaForCausalLM>());
+                Assert.That(_tokenizer, Is.TypeOf<GPT2Tokenizer>());
+                Assert.That(_model.GenerationConfig.EosTokenId, Is.EqualTo(new[] { 2 }));
+            } else {
+                Assert.That(_model, Is.TypeOf<Phi3ForCausalLM>());
+                Assert.That(_tokenizer, Is.TypeOf<TokenizersBackend>());
+                Assert.That(_model.GenerationConfig.EosTokenId, Is.EqualTo(new[] { 32000 }));
+            }
         }
 
         [Test]
@@ -51,7 +69,7 @@ namespace Doji.AI.Transformers.Editor.Tests {
         public void Logits_MatchOnnxRuntime() {
             using var cache = _model.CreateCache();
             float[] logits = _model.Forward(_prompt, cache);
-            float[] expected = TestUtils.LoadFloats("tiny_llama_last_logits");
+            float[] expected = TestUtils.LoadFloats(_references + "_last_logits");
             TestUtils.AssertClose(expected, logits[..expected.Length], 1e-3f, "last logits");
             Assert.That(cache.GetSeqLength(), Is.EqualTo(_prompt.Length));
         }
@@ -74,15 +92,15 @@ namespace Doji.AI.Transformers.Editor.Tests {
         /// </summary>
         [Test]
         public void GreedyGeneration_MatchesTransformers() {
-            int[] expected = TestUtils.LoadInts("tiny_llama_greedy");
-            int[] sequence = _model.Generate(_prompt, new GenerationConfig { MaxNewTokens = expected.Length, EosTokenId = new[] { 2 } });
+            int[] expected = _greedy;
+            int[] sequence = _model.Generate(_prompt, new GenerationConfig { MaxNewTokens = expected.Length, EosTokenId = new[] { _eos } });
             Assert.That(sequence[..^expected.Length], Is.EqualTo(_prompt));
             Assert.That(sequence[_prompt.Length..], Is.EqualTo(expected));
         }
 
         [Test]
         public void GreedyGeneration_WithoutCache_IsTheSame() {
-            int[] expected = TestUtils.LoadInts("tiny_llama_greedy");
+            int[] expected = _greedy;
             int[] sequence = _model.Generate(_prompt, new GenerationConfig { MaxNewTokens = 3, UseCache = false });
             Assert.That(sequence[_prompt.Length..], Is.EqualTo(expected[..3]));
         }
@@ -95,7 +113,7 @@ namespace Doji.AI.Transformers.Editor.Tests {
 
         [Test]
         public void Generation_StopsAtEosToken() {
-            int[] expected = TestUtils.LoadInts("tiny_llama_greedy");
+            int[] expected = _greedy;
             int[] sequence = _model.Generate(_prompt, new GenerationConfig { MaxNewTokens = 8, EosTokenId = new[] { expected[1] } });
             Assert.That(sequence[_prompt.Length..], Is.EqualTo(expected[..2]));
         }

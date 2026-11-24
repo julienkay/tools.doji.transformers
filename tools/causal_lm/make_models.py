@@ -12,13 +12,13 @@ One model runs every step, the prompt and each new token, with the inputs and ou
            past_key_values.{i}.key / past_key_values.{i}.value [batch, kv_heads, past, head_dim] float32
   outputs  logits [batch, seq, vocab], present.{i}.key / present.{i}.value [batch, kv_heads, past + seq, head_dim]
 
-The tiny test model is a random-weight LlamaForCausalLM with the tokenizer of HuggingFaceTB/SmolLM2-135M-Instruct,
+The tiny test models have random weights in the architecture of a real model (Llama, Phi-3) and its tokenizer,
 so the tests run the tokenizer files of a real model.
 
 Usage:
   python make_models.py export <model id or folder> <out folder> [--dtype float16]
-  python make_models.py tiny <out folder>
-  python make_models.py references <tiny folder>
+  python make_models.py tiny <out folder> [--arch llama|phi3]
+  python make_models.py references <tiny onnx folder> [--arch llama|phi3]
   python make_models.py upload <folder> <repo id>
 """
 import argparse
@@ -32,11 +32,32 @@ import torch
 HERE = os.path.dirname(os.path.abspath(__file__))
 RESOURCES = os.path.normpath(os.path.join(HERE, "..", "..", "tools.doji.transformers", "Tests", "Editor", "Resources"))
 
-TOKENIZER_REPO = "HuggingFaceTB/SmolLM2-135M-Instruct"
-TOKENIZER_REVISION = "12fd25f77366fa6b3b4b768ec3050bf629380bac"
 TOKENIZER_FILES = ["tokenizer.json", "tokenizer_config.json", "special_tokens_map.json", "vocab.json", "merges.txt"]
 # Other tokenizer files that some models have, for example the sentencepiece model of Phi-3.
 EXTRA_TOKENIZER_FILES = ["tokenizer.model", "added_tokens.json"]
+
+# The tiny test models: random weights in the architecture of a real model, with its tokenizer. "prefix" names
+# the reference files of the tests.
+TINY = {
+    "llama": dict(prefix="tiny_llama", tokenizer=("HuggingFaceTB/SmolLM2-135M-Instruct", "12fd25f77366fa6b3b4b768ec3050bf629380bac")),
+    "phi3": dict(prefix="tiny_phi3", tokenizer=("microsoft/Phi-3-mini-4k-instruct", "f39ac1d28e925b323eae81227eaba4464caced4e")),
+}
+
+
+def tiny_config(arch):
+    # Large weights spread the logits, so greedy decoding has clear winners and does not flip on rounding.
+    if arch == "llama":
+        from transformers import LlamaConfig
+        return LlamaConfig(
+            vocab_size=49152, hidden_size=32, intermediate_size=64, num_hidden_layers=2, num_attention_heads=4,
+            num_key_value_heads=2, max_position_embeddings=8192, rope_theta=100000, rms_norm_eps=1e-5,
+            tie_word_embeddings=True, bos_token_id=1, eos_token_id=2, pad_token_id=2, initializer_range=0.5)
+    from transformers import Phi3Config
+    return Phi3Config(
+        vocab_size=32064, hidden_size=32, intermediate_size=64, num_hidden_layers=2, num_attention_heads=4,
+        num_key_value_heads=4, max_position_embeddings=4096, original_max_position_embeddings=4096, rope_theta=10000,
+        rms_norm_eps=1e-5, tie_word_embeddings=False, bos_token_id=1, eos_token_id=32000, pad_token_id=32000,
+        initializer_range=0.5)
 
 # Texts for the tokenizer tests: digits, contractions, whitespace runs, unicode, emoji and special tokens.
 TEXTS = [
@@ -183,20 +204,21 @@ def export(args):
 
 def tiny(args):
     from huggingface_hub import hf_hub_download
-    from transformers import GenerationConfig, LlamaConfig, LlamaForCausalLM
+    from transformers import AutoModelForCausalLM, GenerationConfig
     torch.manual_seed(0)
-    config = LlamaConfig(
-        vocab_size=49152, hidden_size=32, intermediate_size=64, num_hidden_layers=2, num_attention_heads=4,
-        num_key_value_heads=2, max_position_embeddings=8192, rope_theta=100000, rms_norm_eps=1e-5,
-        tie_word_embeddings=True, bos_token_id=1, eos_token_id=2, pad_token_id=2,
-        # Large weights spread the logits, so greedy decoding has clear winners and does not flip on rounding.
-        initializer_range=0.5)
-    model = LlamaForCausalLM(config).eval()
+    config = tiny_config(args.arch)
+    model = AutoModelForCausalLM.from_config(config).eval()
     torch_dir = os.path.join(args.out, "torch")
     model.save_pretrained(torch_dir)
-    GenerationConfig(bos_token_id=1, eos_token_id=2, pad_token_id=2).save_pretrained(torch_dir)
-    for name in TOKENIZER_FILES:
-        shutil.copy(hf_hub_download(TOKENIZER_REPO, name, revision=TOKENIZER_REVISION), os.path.join(torch_dir, name))
+    GenerationConfig(bos_token_id=config.bos_token_id, eos_token_id=config.eos_token_id,
+                     pad_token_id=config.pad_token_id).save_pretrained(torch_dir)
+    repo, revision = TINY[args.arch]["tokenizer"]
+    for name in TOKENIZER_FILES + EXTRA_TOKENIZER_FILES:
+        try:
+            src = hf_hub_download(repo, name, revision=revision)
+        except Exception:
+            continue
+        shutil.copy(src, os.path.join(torch_dir, name))
     export(argparse.Namespace(model=torch_dir, out=os.path.join(args.out, "onnx")))
     margins(load_model(torch_dir))
 
@@ -223,13 +245,14 @@ def references(args):
     """Reference data of the tests: the tokenizer of transformers, and onnxruntime on the exact ONNX file Unity loads."""
     from transformers import AutoTokenizer
     root = args.tiny
+    prefix = TINY[args.arch]["prefix"]
     tokenizer = AutoTokenizer.from_pretrained(root)
     cases = []
     for text in TEXTS:
         ids = tokenizer.encode(text)
         cases.append({"text": text, "ids": ids, "decoded": tokenizer.decode(ids), "decoded_skip_special": tokenizer.decode(ids, skip_special_tokens=True)})
     chat = tokenizer.apply_chat_template(MESSAGES, add_generation_prompt=True, tokenize=False)
-    with open(os.path.join(RESOURCES, "tiny_llama_tokenizer.json"), "w", encoding="utf-8", newline="\n") as f:
+    with open(os.path.join(RESOURCES, prefix + "_tokenizer.json"), "w", encoding="utf-8", newline="\n") as f:
         json.dump({"cases": cases, "messages": MESSAGES, "chat": chat}, f, ensure_ascii=False, indent=1)
 
     from transformers import AutoConfig
@@ -237,10 +260,10 @@ def references(args):
     lm = OnnxLM(os.path.join(root, "model.onnx"), config)
     prompt = tokenizer.encode(chat)
     logits, _ = lm.run(prompt)
-    write("tiny_llama_prompt_ids", prompt)
-    write("tiny_llama_last_logits", logits[0, -1, :64].tolist())
+    write(prefix + "_prompt_ids", prompt)
+    write(prefix + "_last_logits", logits[0, -1, :64].tolist())
     generated = lm.greedy(prompt, NEW_TOKENS)
-    write("tiny_llama_greedy", generated)
+    write(prefix + "_greedy", generated)
     if os.path.exists(os.path.join(root, "..", "torch")):
         from transformers import AutoModelForCausalLM
         model = AutoModelForCausalLM.from_pretrained(os.path.join(root, "..", "torch"))
@@ -263,8 +286,10 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser("export"); p.add_argument("model"); p.add_argument("out")
     p.add_argument("--dtype", choices=["float32", "float16"], default="float32"); p.set_defaults(run=export)
-    p = sub.add_parser("tiny"); p.add_argument("out"); p.set_defaults(run=tiny)
-    p = sub.add_parser("references"); p.add_argument("tiny"); p.set_defaults(run=references)
+    p = sub.add_parser("tiny"); p.add_argument("out"); p.add_argument("--arch", choices=list(TINY), default="llama")
+    p.set_defaults(run=tiny)
+    p = sub.add_parser("references"); p.add_argument("tiny"); p.add_argument("--arch", choices=list(TINY), default="llama")
+    p.set_defaults(run=references)
     p = sub.add_parser("upload"); p.add_argument("folder"); p.add_argument("repo"); p.set_defaults(run=upload)
     args = parser.parse_args()
     args.run(args)

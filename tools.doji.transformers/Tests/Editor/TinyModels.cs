@@ -12,5 +12,11 @@ namespace Doji.AI.Transformers.Editor.Tests {
         /// HuggingFaceTB/SmolLM2-135M-Instruct, exported to plain ONNX.
         /// </summary>
         public const string Llama = "julienkay/tiny-random-LlamaForCausalLM-onnx";
+
+        /// <summary>
+        /// A 2-layer random-weight Phi3ForCausalLM with the tokenizer of microsoft/Phi-3-mini-4k-instruct,
+        /// exported to plain ONNX.
+        /// </summary>
+        public const string Phi3 = "julienkay/tiny-random-Phi3ForCausalLM-onnx";
     }
 }
