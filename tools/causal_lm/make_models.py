@@ -19,9 +19,9 @@ Qwen3.5 mixes full attention with linear attention layers, whose inputs and outp
 
 Usage:
   python make_models.py export <model id or folder> <out folder> [--dtype float16]
-  python make_models.py tiny <out folder> [--arch llama|phi3|qwen3_5]
-  python make_models.py references <tiny onnx folder> [--arch llama|phi3|qwen3_5]
-  python make_models.py gguf-references <tiny torch folder> <folder of model-bf16.gguf, model-q8_0.gguf> [--arch qwen3_5]
+  python make_models.py tiny <out folder> [--arch llama|phi3|qwen3_5|qwen3]
+  python make_models.py references <tiny onnx folder> [--arch llama|phi3|qwen3_5|qwen3]
+  python make_models.py gguf-references <tiny torch folder> <folder of model-{f32,bf16,q8_0}.gguf> [--arch qwen3_5] [--f32]
   python make_models.py upload <folder> <repo id>
 """
 import argparse
@@ -47,6 +47,8 @@ TINY = {
     "llama": dict(prefix="tiny_llama", tokenizer=("HuggingFaceTB/SmolLM2-135M-Instruct", "12fd25f77366fa6b3b4b768ec3050bf629380bac")),
     "phi3": dict(prefix="tiny_phi3", tokenizer=("microsoft/Phi-3-mini-4k-instruct", "f39ac1d28e925b323eae81227eaba4464caced4e")),
     "qwen3_5": dict(prefix="tiny_qwen3_5", tokenizer=("Qwen/Qwen3.5-0.8B", "2fc06364715b967f1860aea9cf38778875588b17")),
+    # Only for the GGUF tests of the qwen3 architecture. The tokenizer of Qwen3.5 has the tokens of Qwen3 and more.
+    "qwen3": dict(prefix="tiny_qwen3", tokenizer=("Qwen/Qwen3.5-0.8B", "2fc06364715b967f1860aea9cf38778875588b17")),
 }
 
 
@@ -69,6 +71,13 @@ def tiny_config(arch):
             tie_word_embeddings=True, eos_token_id=248044, pad_token_id=248044, initializer_range=0.5,
             rope_parameters={"rope_type": "default", "rope_theta": 10000000, "partial_rotary_factor": 0.25,
                              "mrope_section": [1, 1, 0], "mrope_interleaved": True})
+    if arch == "qwen3":
+        # The query and key norms of Qwen3, with a head size that is not hidden_size / num_attention_heads.
+        from transformers import Qwen3Config
+        return Qwen3Config(
+            vocab_size=248320, hidden_size=32, intermediate_size=64, num_hidden_layers=2, num_attention_heads=4,
+            num_key_value_heads=2, head_dim=16, max_position_embeddings=8192, rope_theta=1000000, rms_norm_eps=1e-6,
+            tie_word_embeddings=True, eos_token_id=248044, pad_token_id=248044, initializer_range=0.5)
     from transformers import Phi3Config
     return Phi3Config(
         vocab_size=32064, hidden_size=32, intermediate_size=64, num_hidden_layers=2, num_attention_heads=4,
@@ -348,7 +357,8 @@ def gguf_references(args):
     and --outtype f32, bf16 or q8_0). A file that is not F32 holds its matrices (the embedding and the linear
     weights) as BF16 or Q8_0, which gguf-py rounds as the converter does. Unity converts BF16 to float16 and keeps
     Q8_0 in its blocks (BlockQuant of sentis-utils), which compute with the dequantized values. The other tensors stay
-    float32. The F32 file needs no data of its own: its logits are those of the tiny model.
+    float32. The F32 file holds the weights of the tiny model; its data is written for the models whose tests have no
+    other reference data (--f32).
     """
     import gguf
     from gguf import quants
@@ -356,28 +366,37 @@ def gguf_references(args):
     prefix = TINY[args.arch]["prefix"]
     tokenizer = AutoTokenizer.from_pretrained(args.torch)
     prompt = tokenizer.encode(tokenizer.apply_chat_template(MESSAGES, add_generation_prompt=True, tokenize=False))
-    for outtype, qtype in [("bf16", gguf.GGMLQuantizationType.BF16), ("q8_0", gguf.GGMLQuantizationType.Q8_0)]:
+    write(prefix + "_prompt_ids", prompt)
+    outtypes = [("bf16", gguf.GGMLQuantizationType.BF16), ("q8_0", gguf.GGMLQuantizationType.Q8_0)]
+    if args.f32:
+        outtypes.insert(0, ("f32", gguf.GGMLQuantizationType.F32))
+    for outtype, qtype in outtypes:
         reader = gguf.GGUFReader(os.path.join(args.gguf, f"model-{outtype}.gguf"))
         types = {t.name: t.tensor_type for t in reader.tensors}
         assert types["token_embd.weight"] == qtype and types["blk.0.attn_norm.weight"] == gguf.GGMLQuantizationType.F32, types
         model = load_model(args.torch)
         with torch.no_grad():
             for name, param in model.named_parameters():
-                if param.ndim == 2:
+                if param.ndim == 2 and outtype != "f32":
                     rounded = torch.from_numpy(quants.dequantize(quants.quantize(param.numpy(), qtype), qtype))
                     param.copy_(rounded.half().float() if outtype == "bf16" else rounded)
             # Check the rounding against the file for tensors that the converter does not reorder.
             table = model.model.embed_tokens.weight.numpy()
             tensor = next(t for t in reader.tensors if t.name == "token_embd.weight")
-            from_file = quants.dequantize(tensor.data, qtype).reshape(table.shape)
+            from_file = np.array(quants.dequantize(tensor.data, qtype)).reshape(table.shape)
             from_file = torch.from_numpy(from_file)
             from_file = from_file.half().float() if outtype == "bf16" else from_file
             assert np.array_equal(from_file.numpy(), table), "the embedding differs from the file"
-        lm = hybrid.TorchLM(model)
-        logits, _ = lm.run(prompt)
+        if hybrid.is_hybrid(model.config):
+            lm = hybrid.TorchLM(model)
+            logits, _ = lm.run(prompt)
+            generated = lm.greedy(prompt, NEW_TOKENS)
+        else:
+            with torch.no_grad():
+                logits = model(torch.tensor([prompt])).logits.numpy()
+                generated = model.generate(torch.tensor([prompt]), max_new_tokens=NEW_TOKENS, do_sample=False)[0, len(prompt):].tolist()
         name = f"{prefix}_gguf_{outtype}"
         write(name + "_last_logits", [float(x) for x in logits[0, -1, :64]])
-        generated = lm.greedy(prompt, NEW_TOKENS)
         write(name + "_greedy", generated)
         print("wrote", name, "greedy:", generated)
 
@@ -400,7 +419,8 @@ def main():
     p = sub.add_parser("references"); p.add_argument("tiny"); p.add_argument("--arch", choices=list(TINY), default="llama")
     p.set_defaults(run=references)
     p = sub.add_parser("gguf-references"); p.add_argument("torch"); p.add_argument("gguf")
-    p.add_argument("--arch", choices=list(TINY), default="qwen3_5"); p.set_defaults(run=gguf_references)
+    p.add_argument("--arch", choices=list(TINY), default="qwen3_5"); p.add_argument("--f32", action="store_true")
+    p.set_defaults(run=gguf_references)
     p = sub.add_parser("upload"); p.add_argument("folder"); p.add_argument("repo"); p.set_defaults(run=upload)
     args = parser.parse_args()
     args.run(args)

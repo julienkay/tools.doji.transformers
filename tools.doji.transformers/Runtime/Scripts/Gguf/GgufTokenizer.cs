@@ -55,15 +55,68 @@ namespace Doji.AI.Transformers {
         };
 
         /// <summary>Whether this package can build the tokenizer of <paramref name="file"/>.</summary>
-        public static bool IsSupported(GgufFile file) =>
-            file.GetValue("tokenizer.ggml.model", "") == "gpt2" && PreTokenizers.ContainsKey(file.GetValue("tokenizer.ggml.pre", ""));
+        public static bool IsSupported(GgufFile file) => file.GetValue("tokenizer.ggml.model", "") switch {
+            "gpt2" => PreTokenizers.ContainsKey(file.GetValue("tokenizer.ggml.pre", "")),
+            "llama" => true,
+            _ => false,
+        };
+
+        /// <summary>The tokenizer of <paramref name="file"/>.</summary>
+        public static PreTrainedTokenizerBase Load(GgufFile file) {
+            return file.GetValue("tokenizer.ggml.model", "") == "llama" ? SentencePiece(file) : new TokenizersBackend(TokenizerJson(file), Config(file));
+        }
+
+        /// <summary>
+        /// The sentencepiece BPE tokenizer of a file with <c>tokenizer.ggml.model</c> llama, as transformers'
+        /// <c>convert_gguf_tokenizer</c> builds it: a <see cref="LlamaTokenizer"/> with merges from the scores of the
+        /// pieces. Control tokens are special added tokens, user-defined tokens are added tokens. Phi-3 adds the
+        /// prefix space with a normalizer instead of the metaspace pre-tokenizer, as its <c>tokenizer.json</c> does.
+        /// </summary>
+        private static LlamaTokenizer SentencePiece(GgufFile file) {
+            string[] tokens = file.GetValue<string[]>("tokenizer.ggml.tokens");
+            int[] types = file.TryGetValue("tokenizer.ggml.token_type", out int[] t) ? t : null;
+            float[] scores = file.TryGetValue("tokenizer.ggml.scores", out float[] s) ? s : null;
+            var config = Config(file);
+            // llama.cpp adds a space in front of the text unless the file says otherwise.
+            config.AddPrefixSpace = file.GetValue("tokenizer.ggml.add_space_prefix", true);
+            config.Legacy = false;
+            if (file.TryGetValue("tokenizer.ggml.add_bos_token", out bool addBos)) {
+                config.AddBosToken = addBos;
+            }
+            if (file.TryGetValue("tokenizer.ggml.add_eos_token", out bool addEos)) {
+                config.AddEosToken = addEos;
+            }
+            var vocab = new Dictionary<string, int>();
+            var pieces = new List<(string, float)>();
+            for (int i = 0; i < tokens.Length; i++) {
+                int type = types?[i] ?? 1;
+                if (type == 5) {
+                    continue;
+                }
+                vocab[tokens[i]] = i;
+                pieces.Add((tokens[i], scores?[i] ?? -i));
+                if (type == 3 || type == 4) {
+                    config.ExtraSpecialTokens.Add(new AddedToken(tokens[i], special: type == 3, normalized: false));
+                }
+            }
+            var tokenizer = new LlamaTokenizer(vocab, LlamaTokenizer.GenerateMerges(vocab, pieces), config);
+            if (file.Architecture == "phi3") {
+                // "  hi" becomes ▁▁▁hi, not ▁▁hi as with the metaspace pre-tokenizer.
+                tokenizer.Backend.Normalizer = new Tokenizers.Normalizers.Sequence(new Tokenizers.Normalizers.Normalizer[] {
+                    new Tokenizers.Normalizers.Prepend("▁"),
+                    new Tokenizers.Normalizers.Replace(Tokenizers.Normalizers.Pattern.String(" "), "▁"),
+                });
+                tokenizer.Backend.PreTokenizer = null;
+            }
+            return tokenizer;
+        }
 
         /// <summary>The <c>tokenizer.json</c> of the tokenizer of <paramref name="file"/>.</summary>
         public static string TokenizerJson(GgufFile file) {
             string model = file.GetValue("tokenizer.ggml.model", "");
             string pre = file.GetValue("tokenizer.ggml.pre", "");
             if (model != "gpt2") {
-                throw new NotSupportedException($"{file.Path} has a tokenizer of type '{model}'. Supported: gpt2 (byte-level BPE).");
+                throw new NotSupportedException($"{file.Path} has a tokenizer of type '{model}'. Supported: gpt2 (byte-level BPE) and llama (sentencepiece BPE).");
             }
             if (!PreTokenizers.TryGetValue(pre, out var create)) {
                 throw new NotSupportedException($"{file.Path} has the pre-tokenizer '{pre}'. Supported: {string.Join(", ", PreTokenizers.Keys)}.");
@@ -83,7 +136,7 @@ namespace Doji.AI.Transformers {
                 if (type == 3 || type == 4) {
                     added.Add(new JObject {
                         ["id"] = i, ["content"] = tokens[i], ["single_word"] = false, ["lstrip"] = false, ["rstrip"] = false,
-                        ["normalized"] = type == 4, ["special"] = type == 3,
+                        ["normalized"] = false, ["special"] = type == 3,
                     });
                 }
             }

@@ -54,7 +54,7 @@ The models are plain ONNX exports with the input and output names of optimum (`i
 
 #### GGUF files
 
-`AutoModelForCausalLM.FromGguf` loads a model from a GGUF file of llama.cpp, for example one of [ggml-org/Qwen3.5-0.8B-GGUF](https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF). Supported architecture: `qwen35` (Qwen3.5). Q8_0, Q4_K, Q5_K and Q6_K weights stay quantized on the GPU, which covers Q8_0 and Q4_K_M files. F32 tensors stay float32, other types become float16. `AutoTokenizer.FromGguf` loads the tokenizer and the chat template from the metadata of the same file.
+`AutoModelForCausalLM.FromGguf` loads a model from a GGUF file of llama.cpp, for example one of [ggml-org/Qwen3.5-0.8B-GGUF](https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF). Supported architectures: `llama` (for example SmolLM2), `qwen3`, `phi3` (Phi-3 with a context of 4k) and `qwen35` (Qwen3.5). Q8_0, Q4_K, Q5_K and Q6_K weights stay quantized on the GPU, which covers Q8_0 and Q4_K_M files. F32 tensors stay float32, other types become float16. `AutoTokenizer.FromGguf` loads the tokenizer and the chat template from the metadata of the same file.
 
 ```csharp
 var model = AutoModelForCausalLM.FromGguf("Models/Qwen3.5-0.8B-Q8_0.gguf");
@@ -134,7 +134,9 @@ Tokenizers
 LLMs
 - [x] Llama (SmolLM2)
 - [x] Phi-3
+- [x] Qwen3 (from GGUF files)
 - [x] Qwen3.5 (text)
+- [x] GGUF files of llama.cpp (`llama`, `qwen3`, `phi3`, `qwen35`)
 
 ### Dependencies
 - [AI Model Hub] (`tools.doji.model-hub`)

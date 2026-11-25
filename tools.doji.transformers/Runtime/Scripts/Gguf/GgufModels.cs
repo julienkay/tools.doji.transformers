@@ -25,8 +25,14 @@ namespace Doji.AI.Transformers {
                     using var model = Qwen3_5Gguf.Build(file, config);
                     return new Qwen3_5ForCausalLM(model, config, GenerationConfig(file), backend);
                 }
+                case LlamaGguf.Llama or LlamaGguf.Qwen3 or LlamaGguf.Phi3: {
+                    var config = LlamaGguf.Config(file);
+                    using var model = LlamaGguf.Build(file, config);
+                    return LlamaGguf.Create(file, model, config, GenerationConfig(file), backend);
+                }
                 default:
-                    throw new NotSupportedException($"GGUF files of architecture '{architecture}' are not supported. Supported: {Qwen3_5Gguf.Architecture}.");
+                    throw new NotSupportedException($"GGUF files of architecture '{architecture}' are not supported. " +
+                        $"Supported: {string.Join(", ", LlamaGguf.Architectures)}, {Qwen3_5Gguf.Architecture}.");
             }
         }
 

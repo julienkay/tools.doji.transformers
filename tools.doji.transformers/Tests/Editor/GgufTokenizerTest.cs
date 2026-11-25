@@ -7,25 +7,42 @@ using NUnit.Framework;
 namespace Doji.AI.Transformers.Editor.Tests {
 
     /// <summary>
-    /// The tokenizer of a GGUF file (<see cref="AutoTokenizer.FromGguf"/>) against the tokenizer.json of the same
-    /// model: the tiny Qwen3.5 model, which has the tokenizer of Qwen/Qwen3.5-0.8B.
+    /// The tokenizer of a GGUF file (<see cref="AutoTokenizer.FromGguf"/>) against the tokenizer of the same model
+    /// from its Hugging Face files: the tiny Qwen3.5 model (byte-level BPE, pre-tokenizer qwen35), the tiny Llama
+    /// model with the tokenizer of SmolLM2 (byte-level BPE, smollm) and the tiny Phi-3 model (sentencepiece BPE).
     /// </summary>
+    [TestFixture(TinyModels.Qwen3_5GgufVariable, TinyModels.Qwen3_5, "<|im_end|>")]
+    [TestFixture(TinyModels.LlamaGgufVariable, TinyModels.Llama, null)]
+    [TestFixture(TinyModels.Phi3GgufVariable, TinyModels.Phi3, null)]
     public class GgufTokenizerTest {
 
+        private readonly string _variable, _repository, _eosToken;
         private PreTrainedTokenizerBase _fromGguf, _reference;
+
+        /// <param name="eosToken">The end-of-sequence token of the file, or null for the token of the reference.</param>
+        public GgufTokenizerTest(string variable, string repository, string eosToken) {
+            _variable = variable;
+            _repository = repository;
+            _eosToken = eosToken;
+        }
 
         [OneTimeSetUp]
         public void Load() {
-            string directory = Environment.GetEnvironmentVariable(TinyModels.Qwen3_5GgufVariable);
+            string directory = Environment.GetEnvironmentVariable(_variable);
             string path = directory == null ? null : Path.Combine(directory, "model-q8_0.gguf");
             if (path == null || !File.Exists(path)) {
-                Assert.Ignore($"Set {TinyModels.Qwen3_5GgufVariable} to the folder of the tiny Qwen3.5 GGUF files.");
+                Assert.Ignore($"Set {_variable} to the folder of the GGUF files of {_repository}.");
             }
             _fromGguf = AutoTokenizer.FromGguf(path);
-            // The tiny repository has the model type qwen3_5_text, for which transformers picks Qwen2Tokenizer and its
-            // pre-tokenizer. Qwen/Qwen3.5-0.8B has the model type qwen3_5, for which transformers loads tokenizer.json
-            // as it is. The GGUF files keep the tokenizer of the original model, so the reference is the second.
-            _reference = SyncTask.Run(AutoTokenizer.FromPretrainedAsync(ModelRepository.Open(TinyModels.Qwen3_5), "", "qwen3_5"));
+            if (_repository == TinyModels.Qwen3_5) {
+                // The tiny repository has the model type qwen3_5_text, for which transformers picks Qwen2Tokenizer and
+                // its pre-tokenizer. Qwen/Qwen3.5-0.8B has the model type qwen3_5, for which transformers loads
+                // tokenizer.json as it is. The GGUF files keep the tokenizer of the original model, so the reference
+                // is the second.
+                _reference = SyncTask.Run(AutoTokenizer.FromPretrainedAsync(ModelRepository.Open(_repository), "", "qwen3_5"));
+            } else {
+                _reference = AutoTokenizer.FromPretrained(_repository);
+            }
         }
 
         private static IEnumerable<string> Texts() {
@@ -33,7 +50,9 @@ namespace Doji.AI.Transformers.Editor.Tests {
             yield return "  Hello,\tworld!\n\n  It's 2026: 3.14159 × 10⁶ — naïve café 東京 😀 <think>\n</think>";
             yield return "def f(x):\n    return x ** 2  # comment\r\n";
             yield return "I'VE been there, we'll see; they'd've";
-            yield return "ﬁ Å Å ́e";
+            yield return "ﬁ Å Å ́e";
+            // Not the chat tokens of Phi-3: its tokenizer.json strips the whitespace after them (rstrip), and a GGUF file
+            // has no such flag.
             yield return "<|im_start|>user\nHi<|im_end|>\n<|im_start|>assistant\n";
             var random = new Random(3);
             for (int i = 0; i < 200; i++) {
@@ -42,7 +61,7 @@ namespace Doji.AI.Transformers.Editor.Tests {
         }
 
         [Test]
-        public void Encode_IsTheEncodingOfTokenizerJson() {
+        public void Encode_IsTheEncodingOfTheReference() {
             foreach (string text in Texts()) {
                 int[] expected = _reference.Encode(text).InputIds.ToArray();
                 int[] actual = _fromGguf.Encode(text).InputIds.ToArray();
@@ -53,8 +72,9 @@ namespace Doji.AI.Transformers.Editor.Tests {
 
         [Test]
         public void SpecialTokens_AreThoseOfTheConverter() {
-            // convert_hf_to_gguf.py sets the end-of-sequence token to <|im_end|>, the end of a chat turn.
-            Assert.That(_fromGguf.EosToken, Is.EqualTo("<|im_end|>"));
+            // convert_hf_to_gguf.py sets the end-of-sequence token of Qwen3.5 to <|im_end|>, the end of a chat turn.
+            Assert.That(_fromGguf.EosToken, Is.EqualTo(_eosToken ?? _reference.EosToken));
+            Assert.That(_fromGguf.BosToken, Is.EqualTo(_reference.BosToken));
             Assert.That(_fromGguf.PadToken, Is.EqualTo(_reference.PadToken));
             Assert.That(_fromGguf.Count, Is.EqualTo(_reference.Count));
         }

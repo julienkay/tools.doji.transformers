@@ -31,5 +31,22 @@ namespace Doji.AI.Transformers.Editor.Tests {
         /// AI Model Hub does not serve GGUF files yet.
         /// </summary>
         public const string Qwen3_5GgufVariable = "DOJI_TINY_QWEN3_5_GGUF";
+
+        /// <summary>
+        /// The environment variable with the folder of model-f32.gguf, model-bf16.gguf and model-q8_0.gguf of the tiny
+        /// Llama model (<see cref="Llama"/>), from convert_hf_to_gguf.py of llama.cpp.
+        /// </summary>
+        public const string LlamaGgufVariable = "DOJI_TINY_LLAMA_GGUF";
+
+        /// <summary>
+        /// The environment variable with the folder of the GGUF files of the tiny Phi-3 model (<see cref="Phi3"/>).
+        /// </summary>
+        public const string Phi3GgufVariable = "DOJI_TINY_PHI3_GGUF";
+
+        /// <summary>
+        /// The environment variable with the folder of the GGUF files of a 2-layer random-weight Qwen3ForCausalLM with
+        /// the tokenizer of Qwen/Qwen3.5-0.8B (tools/causal_lm/make_models.py tiny --arch qwen3).
+        /// </summary>
+        public const string Qwen3GgufVariable = "DOJI_TINY_QWEN3_GGUF";
     }
 }

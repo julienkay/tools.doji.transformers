@@ -55,11 +55,11 @@ namespace Doji.AI.Transformers {
         /// Loads the tokenizer of a GGUF file of llama.cpp from its metadata, as transformers'
         /// <c>from_pretrained(..., gguf_file=...)</c> does: the vocabulary, the merges, the special tokens and the
         /// chat template. Supported: byte-level BPE tokenizers (<c>tokenizer.ggml.model</c> gpt2) with the
-        /// pre-tokenizers <c>qwen35</c>, <c>qwen2</c> and <c>smollm</c>.
+        /// pre-tokenizers <c>qwen35</c>, <c>qwen2</c> and <c>smollm</c>, and sentencepiece BPE tokenizers
+        /// (<c>tokenizer.ggml.model</c> llama, for example of Phi-3) as a <see cref="LlamaTokenizer"/>.
         /// </summary>
         public static PreTrainedTokenizerBase FromGguf(string path) {
-            var file = Doji.Gguf.GgufFile.Open(path);
-            return new TokenizersBackend(GgufTokenizer.TokenizerJson(file), GgufTokenizer.Config(file));
+            return GgufTokenizer.Load(Doji.Gguf.GgufFile.Open(path));
         }
 
         /// <param name="subfolder">The folder of the tokenizer files in the repository, such as <c>"tokenizer/"</c>.</param>

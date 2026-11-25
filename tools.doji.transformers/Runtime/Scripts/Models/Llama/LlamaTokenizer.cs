@@ -91,6 +91,29 @@ namespace Doji.AI.Transformers {
                 .Select(m => (m.Left, m.Right)).ToList();
         }
 
+        /// <summary>
+        /// transformers' <c>generate_merges</c> with scores: each split of a piece into two pieces of the vocabulary is
+        /// a merge, ranked by the score of the piece, the highest first. A GGUF file of a sentencepiece tokenizer has
+        /// the scores of its pieces, and no merges.
+        /// </summary>
+        /// <param name="scores">The score of each piece, in the order of the pieces.</param>
+        internal static List<(string, string)> GenerateMerges(Dictionary<string, int> vocab, IEnumerable<(string Piece, float Score)> scores) {
+            var merges = new List<(string Left, string Right, float Score)>();
+            foreach (var (merge, score) in scores) {
+                var local = new List<(string, string, float)>();
+                for (int index = 1; index < merge.Length; index++) {
+                    string left = merge[..index], right = merge[index..];
+                    if (vocab.ContainsKey(left) && vocab.ContainsKey(right)) {
+                        local.Add((left, right, score));
+                    }
+                }
+                merges.AddRange(local.OrderBy(m => vocab[m.Item1]).ThenBy(m => vocab[m.Item2]));
+            }
+            // As Python's sorted(..., reverse=True): descending on the whole key, and stable.
+            return merges.OrderByDescending(m => m.Score).ThenByDescending(m => CodePoints(m.Left)).ThenByDescending(m => CodePoints(m.Right))
+                .Select(m => (m.Left, m.Right)).ToList();
+        }
+
         private static int CodePoints(string text) => text.Length - text.Count(char.IsLowSurrogate);
     }
 }

@@ -35,6 +35,15 @@ namespace Doji.AI.Transformers {
             return SyncTask.Run(FromPretrainedAsync(ModelRepository.Open(modelId), backend, Create));
         }
 
+        /// <summary>
+        /// Loads a model from a GGUF file of llama.cpp (architecture <c>phi3</c>). The tensors stay in the file
+        /// until the worker needs them. Q8_0, Q4_K, Q5_K and Q6_K weights stay quantized on the device, F32 tensors
+        /// stay float32, and other types become float16.
+        /// </summary>
+        public static Phi3ForCausalLM FromGguf(string path, BackendType backend = BackendType.GPUCompute) {
+            return (Phi3ForCausalLM)GgufModels.Load(path, backend, LlamaGguf.Phi3);
+        }
+
         internal static Phi3ForCausalLM Create(ModelFile file, PretrainedConfig config, GenerationConfig generationConfig, BackendType backend) {
             return new Phi3ForCausalLM(file, config, generationConfig, backend);
         }

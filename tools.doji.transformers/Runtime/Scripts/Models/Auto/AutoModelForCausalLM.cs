@@ -32,7 +32,9 @@ namespace Doji.AI.Transformers {
         /// Loads a model from a GGUF file of llama.cpp, choosing the class from <c>general.architecture</c>. The
         /// tensors stay in the file until the worker needs them. Q8_0, Q4_K, Q5_K and Q6_K weights stay quantized on
         /// the device, F32 tensors stay float32, and other types become float16. Supported architectures:
-        /// <c>qwen35</c> (<see cref="Qwen3_5ForCausalLM"/>). <see cref="AutoTokenizer.FromGguf"/> loads its tokenizer.
+        /// <c>llama</c> (<see cref="LlamaForCausalLM"/>), <c>qwen3</c> (<see cref="Qwen3ForCausalLM"/>), <c>phi3</c>
+        /// (<see cref="Phi3ForCausalLM"/>) and <c>qwen35</c> (<see cref="Qwen3_5ForCausalLM"/>).
+        /// <see cref="AutoTokenizer.FromGguf"/> loads its tokenizer.
         /// </summary>
         public static PreTrainedModel FromGguf(string path, BackendType backend = BackendType.GPUCompute) {
             return GgufModels.Load(path, backend);
@@ -45,6 +47,7 @@ namespace Doji.AI.Transformers {
             return architecture switch {
                 "LlamaForCausalLM" => await PreTrainedModel.FromPretrainedAsync(files, backend, LlamaForCausalLM.Create),
                 "Phi3ForCausalLM" => await PreTrainedModel.FromPretrainedAsync(files, backend, Phi3ForCausalLM.Create),
+                "Qwen3ForCausalLM" => await PreTrainedModel.FromPretrainedAsync(files, backend, Qwen3ForCausalLM.Create),
                 // As transformers' AutoModelForCausalLM, the text model of a Qwen3.5 checkpoint with a vision tower.
                 "Qwen3_5ForCausalLM" or "Qwen3_5ForConditionalGeneration"
                     => await PreTrainedModel.FromPretrainedAsync(files, backend, Qwen3_5ForCausalLM.Create),
