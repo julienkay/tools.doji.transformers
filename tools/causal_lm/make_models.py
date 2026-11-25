@@ -21,6 +21,7 @@ Usage:
   python make_models.py export <model id or folder> <out folder> [--dtype float16]
   python make_models.py tiny <out folder> [--arch llama|phi3|qwen3_5]
   python make_models.py references <tiny onnx folder> [--arch llama|phi3|qwen3_5]
+  python make_models.py gguf-references <tiny torch folder> <folder of model-bf16.gguf, model-q8_0.gguf> [--arch qwen3_5]
   python make_models.py upload <folder> <repo id>
 """
 import argparse
@@ -340,6 +341,44 @@ def references(args):
     print("wrote references to", RESOURCES, "greedy:", generated)
 
 
+def gguf_references(args):
+    """Reference data of the GGUF tests: transformers with the weights rounded as the GGUF file and Unity round them.
+
+    The GGUF files come from convert_hf_to_gguf.py of llama.cpp on the torch folder of the tiny model (with --no-mtp
+    and --outtype f32, bf16 or q8_0). A file that is not F32 holds its matrices (the embedding and the linear
+    weights) as BF16 or Q8_0, which gguf-py rounds as the converter does. Unity converts them to float16. The other
+    tensors stay float32. The F32 file needs no data of its own: its logits are those of the tiny model.
+    """
+    import gguf
+    from gguf import quants
+    from transformers import AutoTokenizer
+    prefix = TINY[args.arch]["prefix"]
+    tokenizer = AutoTokenizer.from_pretrained(args.torch)
+    prompt = tokenizer.encode(tokenizer.apply_chat_template(MESSAGES, add_generation_prompt=True, tokenize=False))
+    for outtype, qtype in [("bf16", gguf.GGMLQuantizationType.BF16), ("q8_0", gguf.GGMLQuantizationType.Q8_0)]:
+        reader = gguf.GGUFReader(os.path.join(args.gguf, f"model-{outtype}.gguf"))
+        types = {t.name: t.tensor_type for t in reader.tensors}
+        assert types["token_embd.weight"] == qtype and types["blk.0.attn_norm.weight"] == gguf.GGMLQuantizationType.F32, types
+        model = load_model(args.torch)
+        with torch.no_grad():
+            for name, param in model.named_parameters():
+                if param.ndim == 2:
+                    rounded = quants.dequantize(quants.quantize(param.numpy(), qtype), qtype)
+                    param.copy_(torch.from_numpy(rounded).half().float())
+            # Check the rounding against the file for tensors that the converter does not reorder.
+            table = model.model.embed_tokens.weight.numpy()
+            tensor = next(t for t in reader.tensors if t.name == "token_embd.weight")
+            from_file = quants.dequantize(tensor.data, qtype).reshape(table.shape)
+            assert np.array_equal(torch.from_numpy(from_file).half().float().numpy(), table), "the embedding differs from the file"
+        lm = hybrid.TorchLM(model)
+        logits, _ = lm.run(prompt)
+        name = f"{prefix}_gguf_{outtype}"
+        write(name + "_last_logits", [float(x) for x in logits[0, -1, :64]])
+        generated = lm.greedy(prompt, NEW_TOKENS)
+        write(name + "_greedy", generated)
+        print("wrote", name, "greedy:", generated)
+
+
 def upload(args):
     from huggingface_hub import HfApi
     api = HfApi()
@@ -357,6 +396,8 @@ def main():
     p.set_defaults(run=tiny)
     p = sub.add_parser("references"); p.add_argument("tiny"); p.add_argument("--arch", choices=list(TINY), default="llama")
     p.set_defaults(run=references)
+    p = sub.add_parser("gguf-references"); p.add_argument("torch"); p.add_argument("gguf")
+    p.add_argument("--arch", choices=list(TINY), default="qwen3_5"); p.set_defaults(run=gguf_references)
     p = sub.add_parser("upload"); p.add_argument("folder"); p.add_argument("repo"); p.set_defaults(run=upload)
     args = parser.parse_args()
     args.run(args)

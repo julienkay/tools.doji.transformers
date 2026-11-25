@@ -5,6 +5,7 @@
     "com.unity.render-pipelines.universal": "17.6.0",
     "com.unity.ugui": "2.6.0",
     "tools.doji.downloads": "file:../../../../tools.doji.downloads/tools.doji.downloads",
+    "tools.doji.formats.gguf": "file:../../../../tools.doji.formats.gguf/tools.doji.formats.gguf",
     "tools.doji.formats.onnx": "file:../../../../tools.doji.formats.onnx/tools.doji.formats.onnx",
     "tools.doji.model-hub": "file:../../../../tools.doji.model-hub/tools.doji.model-hub",
     "tools.doji.onnx-model-loader": "file:../../../../tools.doji.onnx-model-loader/tools.doji.onnx-model-loader",

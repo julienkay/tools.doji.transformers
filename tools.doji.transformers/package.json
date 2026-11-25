@@ -7,8 +7,9 @@
   "dependencies": {
     "com.unity.ai.inference": "2.6.1",
     "com.unity.nuget.newtonsoft-json": "3.2.2",
-    "tools.doji.model-hub": "1.0.0",
     "tools.doji.downloads": "1.0.0",
+    "tools.doji.formats.gguf": "0.1.0",
+    "tools.doji.model-hub": "1.0.0",
     "tools.doji.sentis-utils": "0.1.1",
     "tools.doji.tokenizers": "1.0.0"
   },

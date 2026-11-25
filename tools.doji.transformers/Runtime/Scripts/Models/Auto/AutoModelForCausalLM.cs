@@ -28,6 +28,15 @@ namespace Doji.AI.Transformers {
             return SyncTask.Run(FromPretrainedAsync(ModelRepository.Open(modelId), backend));
         }
 
+        /// <summary>
+        /// Loads a model from a GGUF file of llama.cpp, choosing the class from <c>general.architecture</c>. The
+        /// tensors stay in the file until the worker needs them. F32 tensors stay float32, all other types become
+        /// float16. Supported architectures: <c>qwen35</c> (<see cref="Qwen3_5ForCausalLM"/>).
+        /// </summary>
+        public static PreTrainedModel FromGguf(string path, BackendType backend = BackendType.GPUCompute) {
+            return GgufModels.Load(path, backend);
+        }
+
         private static async Task<PreTrainedModel> FromPretrainedAsync(ModelRepository files, BackendType backend) {
             var config = await files.ReadJsonAsync<PretrainedConfig>(PreTrainedModel.CONFIG_NAME);
             string architecture = config.Architectures?.Count > 0 ? config.Architectures[0]

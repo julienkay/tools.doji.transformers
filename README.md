@@ -52,6 +52,14 @@ To try it, import the **Text Generation Sample** from the Package Manager and op
 
 The models are plain ONNX exports with the input and output names of optimum (`input_ids`, `attention_mask`, `position_ids`, `past_key_values.*`). `tools/causal_lm/make_models.py` exports a transformers model this way.
 
+#### GGUF files
+
+`AutoModelForCausalLM.FromGguf` loads a model from a GGUF file of llama.cpp, for example one of [ggml-org/Qwen3.5-0.8B-GGUF](https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF). Supported architecture: `qwen35` (Qwen3.5). F32 tensors stay float32, all other types become float16 on the GPU. The tokenizer still comes from the Hugging Face repository of the model.
+
+```csharp
+var model = AutoModelForCausalLM.FromGguf("Models/Qwen3.5-0.8B-Q8_0.gguf");
+```
+
 ### Performance
 
 Rough numbers for greedy generation in Play mode with one frame after each token, as the sample runs. Each model generates 64 tokens after a short chat prompt.
@@ -99,10 +107,18 @@ Long prompts with Phi-3-mini-4k-instruct-sentis-float16, 4 new tokens after the 
 | 2048 tokens | 2.1 tokens/s, 11.6 GB VRAM (at the limit of the GPU) | 3.0 tokens/s, 9.7 GB VRAM |
 | 3072 tokens | not run: 2048 tokens already fill the GPU | 2.2 tokens/s, 10.3 GB VRAM (11.5 GB peak) |
 
+Loading Qwen3.5-0.8B with `BackendType.GPUCompute` in a headless Editor (PlayMode test), D3D12, warm file cache, 3 runs each. Each run gives the 32 greedy tokens of transformers. Load is the time to a model ready to generate.
+
+| Source | Load | RAM after load | VRAM after load |
+|---|---|---|---|
+| `model.sentis`, float16 (`ModelFile`) | 1.9–2.0 s | +1.5 GB | 1.9 GB |
+| [Qwen3.5-0.8B-BF16.gguf](https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF) (`FromGguf`, float16 on the GPU) | 3.1 s (4.3 s first run) | +1.5 GB | 1.9 GB |
+| [Qwen3.5-0.8B-Q8_0.gguf](https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF) (`FromGguf`, float16 on the GPU) | 2.7–2.9 s (4.9 s first run) | +1.3 GB | 1.9 GB |
+
 - Peak VRAM is the GPU memory that the model adds, from `nvidia-smi`. In the long-prompt table, VRAM is the memory of the whole GPU while the model holds its cache.
 - Peak RAM is the resident memory (working set) that the Editor process adds while it loads and runs the model.
 - D3D12 is the default graphics API of Unity 6 on Windows. On D3D12, GPU memory that a model frees during a long prompt can't be reused in the same frame, so long prompts need more VRAM. To use D3D11, turn off *Auto Graphics API for Windows* in the Player settings and put Direct3D11 first, or start the Editor with `-force-d3d11`.
-- Measured on 2026-11-24 (the release Player tables of SmolLM2 on 2026-11-25) with `BackendType.GPUCompute`, Unity 6000.6.4f1, an NVIDIA GeForce RTX 3060 (12 GB) and an Intel Core i7-4790K. The D3D11 numbers come from one run per model.
+- Measured on 2026-11-24 (the release Player tables of SmolLM2 and the Qwen3.5 load table on 2026-11-25) with `BackendType.GPUCompute`, Unity 6000.6.4f1, an NVIDIA GeForce RTX 3060 (12 GB) and an Intel Core i7-4790K. The D3D11 numbers come from one run per model.
 
 ## Roadmap:
 
@@ -120,6 +136,7 @@ LLMs
 
 ### Dependencies
 - [AI Model Hub] (`tools.doji.model-hub`)
+- GGUF Format (`tools.doji.formats.gguf`)
 - [Tokenizers] (`tools.doji.tokenizers`)
 
 [OpenUPM]: https://openupm.com/packages/tools.doji.transformers
