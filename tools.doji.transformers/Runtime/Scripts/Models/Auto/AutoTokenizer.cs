@@ -31,7 +31,8 @@ namespace Doji.AI.Transformers {
         /// </summary>
         private static readonly HashSet<string> ModelsWithIncorrectHubTokenizerClass = new() {
             "arctic", "chatlm", "ernie4_5", "ernie4_5_moe", "fuyu", "internlm2", "internlm3", "jamba", "llava",
-            "llava_next", "minicpm3", "minicpmv", "nemotron", "phi3", "phi3_v", "phimoe", "qwen2", "smolvlm", "vipllava",
+            "llava_next", "minicpm3", "minicpmv", "nemotron", "phi3", "phi3_v", "phimoe", "qwen2", "qwen3_5", "qwen3_5_moe",
+            "qwen3_5_moe_text", "smolvlm", "vipllava",
         };
 
         /// <summary>

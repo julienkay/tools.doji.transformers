@@ -68,6 +68,33 @@ namespace Doji.AI.Transformers {
             return JsonConvert.DeserializeObject<GenerationConfig>(json);
         }
 
+        /// <summary>
+        /// The generation config of a model without <c>generation_config.json</c>, from its <c>config.json</c>, as
+        /// transformers' <c>GenerationConfig.from_model_config</c>: the fields of the config, and the fields that are
+        /// still at their default from the text config of a model with a vision tower (for example the end-of-sequence
+        /// token of Qwen3.5).
+        /// </summary>
+        public static GenerationConfig FromModelConfig(string configJson) {
+            var config = JObject.Parse(configJson);
+            var generationConfig = config.ToObject<GenerationConfig>();
+            if (config["text_config"] is not JObject text) {
+                return generationConfig;
+            }
+            var defaults = new GenerationConfig();
+            var fromText = text.ToObject<GenerationConfig>();
+            foreach (var property in typeof(GenerationConfig).GetProperties()) {
+                var name = property.GetCustomAttributes(typeof(JsonPropertyAttribute), false).OfType<JsonPropertyAttribute>().FirstOrDefault()?.PropertyName;
+                if (name == null || !text.ContainsKey(name)) {
+                    continue;
+                }
+                if (JToken.DeepEquals(JToken.FromObject(property.GetValue(generationConfig) ?? JValue.CreateNull()),
+                        JToken.FromObject(property.GetValue(defaults) ?? JValue.CreateNull()))) {
+                    property.SetValue(generationConfig, property.GetValue(fromText));
+                }
+            }
+            return generationConfig;
+        }
+
         public GenerationConfig Clone() {
             var clone = (GenerationConfig)MemberwiseClone();
             clone.EosTokenId = (int[])EosTokenId?.Clone();

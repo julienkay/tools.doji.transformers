@@ -116,6 +116,7 @@ Tokenizers
 LLMs
 - [x] Llama (SmolLM2)
 - [x] Phi-3
+- [x] Qwen3.5 (text)
 
 ### Dependencies
 - [AI Model Hub] (`tools.doji.model-hub`)

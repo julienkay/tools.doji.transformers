@@ -1,0 +1,101 @@
+{
+ "cases": [
+  {
+   "text": "Hello world!",
+   "ids": [
+    9419,
+    1814,
+    0
+   ],
+   "decoded": "Hello world!",
+   "decoded_skip_special": "Hello world!"
+  },
+  {
+   "text": "The year 2024 had 365 days, didn't it?",
+   "ids": [
+    760,
+    1007,
+    220,
+    17,
+    15,
+    17,
+    19,
+    995,
+    220,
+    18,
+    21,
+    20,
+    2756,
+    11,
+    3105,
+    914,
+    424,
+    30
+   ],
+   "decoded": "The year 2024 had 365 days, didn't it?",
+   "decoded_skip_special": "The year 2024 had 365 days, didn't it?"
+  },
+  {
+   "text": "  leading spaces,\ttabs\nand new lines\n\n",
+   "ids": [
+    220,
+    6187,
+    12258,
+    11,
+    3139,
+    3325,
+    198,
+    429,
+    491,
+    4965,
+    271
+   ],
+   "decoded": "  leading spaces,\ttabs\nand new lines\n\n",
+   "decoded_skip_special": "  leading spaces,\ttabs\nand new lines\n\n"
+  },
+  {
+   "text": "Größe, naïve café, 東京, 😀",
+   "ids": [
+    6262,
+    76239,
+    11,
+    91603,
+    571,
+    50203,
+    11,
+    220,
+    115197,
+    11,
+    87209
+   ],
+   "decoded": "Größe, naïve café, 東京, 😀",
+   "decoded_skip_special": "Größe, naïve café, 東京, 😀"
+  },
+  {
+   "text": "<|im_start|>user\nWhat is 2+2?<|im_end|>\n",
+   "ids": [
+    248045,
+    846,
+    198,
+    3710,
+    369,
+    220,
+    17,
+    10,
+    17,
+    30,
+    248046,
+    198
+   ],
+   "decoded": "<|im_start|>user\nWhat is 2+2?<|im_end|>\n",
+   "decoded_skip_special": "user\nWhat is 2+2?\n"
+  }
+ ],
+ "messages": [
+  {
+   "role": "user",
+   "content": "What is the capital of France?"
+  }
+ ],
+ "chat": "<|im_start|>user\nWhat is the capital of France?<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+}

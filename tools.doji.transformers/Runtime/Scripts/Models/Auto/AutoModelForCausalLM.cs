@@ -35,6 +35,9 @@ namespace Doji.AI.Transformers {
             return architecture switch {
                 "LlamaForCausalLM" => await PreTrainedModel.FromPretrainedAsync(files, backend, LlamaForCausalLM.Create),
                 "Phi3ForCausalLM" => await PreTrainedModel.FromPretrainedAsync(files, backend, Phi3ForCausalLM.Create),
+                // As transformers' AutoModelForCausalLM, the text model of a Qwen3.5 checkpoint with a vision tower.
+                "Qwen3_5ForCausalLM" or "Qwen3_5ForConditionalGeneration"
+                    => await PreTrainedModel.FromPretrainedAsync(files, backend, Qwen3_5ForCausalLM.Create),
                 _ => throw new NotSupportedException($"The architecture '{architecture}' is not supported."),
             };
         }

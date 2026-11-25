@@ -36,9 +36,13 @@ namespace Doji.AI.Transformers {
         /// The templates are Jinja, which this package does not run. It recognizes two common forms instead:
         /// ChatML (<c>&lt;|im_start|&gt;role\ncontent&lt;|im_end|&gt;\n</c>, SmolLM2 and Qwen), with the default system
         /// prompt the template adds when the chat has none, and Phi-3 (<c>&lt;|role|&gt;\ncontent&lt;|end|&gt;\n</c>).
+        /// In the ChatML form of Qwen3.5, the generation prompt opens a thinking block, which is empty unless
+        /// <paramref name="enableThinking"/> is true.
         /// </remarks>
         /// <param name="addGenerationPrompt">Whether to end with the start of an assistant message, for generation.</param>
-        public string ApplyChatTemplate(IEnumerable<ChatMessage> messages, bool addGenerationPrompt = true) {
+        /// <param name="enableThinking">The <c>enable_thinking</c> argument of the template: whether the model may
+        /// reason in a thinking block before it answers.</param>
+        public string ApplyChatTemplate(IEnumerable<ChatMessage> messages, bool addGenerationPrompt = true, bool enableThinking = false) {
             string template = Config.ChatTemplate?.Type == JTokenType.String ? (string)Config.ChatTemplate : null;
             var list = messages.ToList();
             var text = new StringBuilder();
@@ -55,6 +59,9 @@ namespace Doji.AI.Transformers {
                 }
                 if (addGenerationPrompt) {
                     text.Append("<|im_start|>assistant\n");
+                    if (template.Contains("enable_thinking is defined and enable_thinking is true")) {
+                        text.Append(enableThinking ? "<think>\n" : "<think>\n\n</think>\n\n");
+                    }
                 }
             } else if (template != null && template.Contains("<|end|>")) {
                 if (template.Contains("bos_token")) {

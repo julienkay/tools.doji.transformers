@@ -15,6 +15,8 @@ namespace Doji.AI.Transformers {
     /// The ONNX model runs both the prompt and each new token, with the inputs and outputs of optimum exports:
     /// <c>input_ids</c>, <c>attention_mask</c>, <c>position_ids</c> and <c>past_key_values.{i}.key/value</c> in,
     /// <c>logits</c> and <c>present.{i}.key/value</c> out. tools/causal_lm/make_models.py exports models in this form.
+    /// A linear attention layer i (Qwen3.5) has <c>past_conv.{i}</c> and <c>past_recurrent.{i}</c> in, and
+    /// <c>present_conv.{i}</c> and <c>present_recurrent.{i}</c> out, instead of a KV cache.
     /// </remarks>
     public abstract partial class PreTrainedModel : IDisposable {
 
@@ -46,7 +48,6 @@ namespace Doji.AI.Transformers {
         /// executes it after each run, and <see cref="RunInParts"/> after each part. Null on the CPU backend.
         /// </summary>
         private readonly CommandBuffer _commandBuffer;
-        private readonly int _numKeyValueHeads, _headDim;
         private readonly int _inputIds, _attentionMask, _positionIds, _logits;
         private readonly int[] _pastInputs, _presentOutputs;
 
@@ -71,17 +72,21 @@ namespace Doji.AI.Transformers {
         protected PreTrainedModel(ModelFile file, PretrainedConfig config, GenerationConfig generationConfig, BackendType backend)
             : this(file?.Inputs, file?.Outputs, config, generationConfig) {
             // Like transformers and vLLM, a float16 model keeps its KV cache in float16, which halves its memory.
+            // The states of linear attention layers stay float32, as transformers keeps them.
             if (backend == BackendType.GPUCompute && file.HasHalfPrecisionWeights) {
-                int layers = config.NumHiddenLayers;
+                var text = config.GetTextConfig();
                 var past = new List<string>();
                 var present = new List<string>();
-                for (int i = 0; i < layers; i++) {
+                for (int i = 0; i < text.NumHiddenLayers; i++) {
+                    if (text.IsLinearAttention(i)) {
+                        continue;
+                    }
                     past.Add($"past_key_values.{i}.key");
                     past.Add($"past_key_values.{i}.value");
                     present.Add($"present.{i}.key");
                     present.Add($"present.{i}.value");
                 }
-                if (file.UseHalfPrecision(past, present) != 4 * layers) {
+                if (file.UseHalfPrecision(past, present) != 2 * past.Count) {
                     throw new InvalidOperationException("The KV cache inputs and outputs of the model are not all float32.");
                 }
                 CacheDataType = DataType.Short;
@@ -107,8 +112,7 @@ namespace Doji.AI.Transformers {
             }
             Config = config;
             GenerationConfig = generationConfig ?? new GenerationConfig();
-            _numKeyValueHeads = config.NumKeyValueHeads ?? config.NumAttentionHeads;
-            _headDim = config.HeadDim ?? config.HiddenSize / config.NumAttentionHeads;
+            var text = config.GetTextConfig();
 
             // Inputs and outputs by index, not by name: setting inputs by name fails on quantized models.
             var inputs = modelInputs.Select(i => i.name).ToList();
@@ -119,14 +123,15 @@ namespace Doji.AI.Transformers {
             _attentionMask = Input("attention_mask");
             _positionIds = Input("position_ids");
             _logits = Output("logits");
-            int layers = config.NumHiddenLayers;
+            int layers = text.NumHiddenLayers;
             _pastInputs = new int[2 * layers];
             _presentOutputs = new int[2 * layers];
             for (int i = 0; i < layers; i++) {
-                _pastInputs[2 * i] = Input($"past_key_values.{i}.key");
-                _pastInputs[2 * i + 1] = Input($"past_key_values.{i}.value");
-                _presentOutputs[2 * i] = Output($"present.{i}.key");
-                _presentOutputs[2 * i + 1] = Output($"present.{i}.value");
+                bool linear = text.IsLinearAttention(i);
+                _pastInputs[2 * i] = Input(linear ? $"past_conv.{i}" : $"past_key_values.{i}.key");
+                _pastInputs[2 * i + 1] = Input(linear ? $"past_recurrent.{i}" : $"past_key_values.{i}.value");
+                _presentOutputs[2 * i] = Output(linear ? $"present_conv.{i}" : $"present.{i}.key");
+                _presentOutputs[2 * i + 1] = Output(linear ? $"present_recurrent.{i}" : $"present.{i}.value");
             }
         }
 
@@ -142,9 +147,11 @@ namespace Doji.AI.Transformers {
         internal static async Task<T> FromPretrainedAsync<T>(ModelRepository files, BackendType backend,
             Func<ModelFile, PretrainedConfig, GenerationConfig, BackendType, T> create) where T : PreTrainedModel {
             var config = await files.ReadJsonAsync<PretrainedConfig>(CONFIG_NAME);
-            // Like transformers' GenerationConfig.from_model_config: config.json has the special token ids too.
-            var generationConfig = GenerationConfig.Deserialize(await files.ReadTextAsync(
-                files.Has(GENERATION_CONFIG_NAME) ? GENERATION_CONFIG_NAME : CONFIG_NAME));
+            // Like transformers' GenerationConfig.from_model_config: config.json has the special token ids too, in the
+            // text config of a model with a vision tower.
+            var generationConfig = files.Has(GENERATION_CONFIG_NAME)
+                ? GenerationConfig.Deserialize(await files.ReadTextAsync(GENERATION_CONFIG_NAME))
+                : GenerationConfig.FromModelConfig(await files.ReadTextAsync(CONFIG_NAME));
             using var file = await files.OpenModelAsync(files.Has(SENTIS_MODEL_NAME) ? SENTIS_MODEL_NAME : MODEL_NAME);
             T result = create(file, config, generationConfig, backend);
             result.ModelId = files.ModelId;
@@ -152,10 +159,11 @@ namespace Doji.AI.Transformers {
         }
 
         /// <summary>
-        /// Creates an empty KV cache for this model.
+        /// Creates an empty cache for this model: a KV cache, and the states of the linear attention layers of a
+        /// model that has them.
         /// </summary>
         public DynamicCache CreateCache() {
-            return new DynamicCache(Config.NumHiddenLayers, _numKeyValueHeads, _headDim, dataType: CacheDataType);
+            return new DynamicCache(Config, dataType: CacheDataType);
         }
 
         /// <summary>

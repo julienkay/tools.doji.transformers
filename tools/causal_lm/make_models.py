@@ -12,13 +12,15 @@ One model runs every step, the prompt and each new token, with the inputs and ou
            past_key_values.{i}.key / past_key_values.{i}.value [batch, kv_heads, past, head_dim] float32
   outputs  logits [batch, seq, vocab], present.{i}.key / present.{i}.value [batch, kv_heads, past + seq, head_dim]
 
-The tiny test models have random weights in the architecture of a real model (Llama, Phi-3) and its tokenizer,
-so the tests run the tokenizer files of a real model.
+The tiny test models have random weights in the architecture of a real model (Llama, Phi-3, Qwen3.5) and its
+tokenizer, so the tests run the tokenizer files of a real model.
+
+Qwen3.5 mixes full attention with linear attention layers, whose inputs and outputs hybrid.py describes.
 
 Usage:
   python make_models.py export <model id or folder> <out folder> [--dtype float16]
-  python make_models.py tiny <out folder> [--arch llama|phi3]
-  python make_models.py references <tiny onnx folder> [--arch llama|phi3]
+  python make_models.py tiny <out folder> [--arch llama|phi3|qwen3_5]
+  python make_models.py references <tiny onnx folder> [--arch llama|phi3|qwen3_5]
   python make_models.py upload <folder> <repo id>
 """
 import argparse
@@ -29,18 +31,21 @@ import shutil
 import numpy as np
 import torch
 
+import hybrid
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 RESOURCES = os.path.normpath(os.path.join(HERE, "..", "..", "tools.doji.transformers", "Tests", "Editor", "Resources"))
 
 TOKENIZER_FILES = ["tokenizer.json", "tokenizer_config.json", "special_tokens_map.json", "vocab.json", "merges.txt"]
 # Other tokenizer files that some models have, for example the sentencepiece model of Phi-3.
-EXTRA_TOKENIZER_FILES = ["tokenizer.model", "added_tokens.json"]
+EXTRA_TOKENIZER_FILES = ["tokenizer.model", "added_tokens.json", "chat_template.jinja"]
 
 # The tiny test models: random weights in the architecture of a real model, with its tokenizer. "prefix" names
 # the reference files of the tests.
 TINY = {
     "llama": dict(prefix="tiny_llama", tokenizer=("HuggingFaceTB/SmolLM2-135M-Instruct", "12fd25f77366fa6b3b4b768ec3050bf629380bac")),
     "phi3": dict(prefix="tiny_phi3", tokenizer=("microsoft/Phi-3-mini-4k-instruct", "f39ac1d28e925b323eae81227eaba4464caced4e")),
+    "qwen3_5": dict(prefix="tiny_qwen3_5", tokenizer=("Qwen/Qwen3.5-0.8B", "2fc06364715b967f1860aea9cf38778875588b17")),
 }
 
 
@@ -52,6 +57,17 @@ def tiny_config(arch):
             vocab_size=49152, hidden_size=32, intermediate_size=64, num_hidden_layers=2, num_attention_heads=4,
             num_key_value_heads=2, max_position_embeddings=8192, rope_theta=100000, rms_norm_eps=1e-5,
             tie_word_embeddings=True, bos_token_id=1, eos_token_id=2, pad_token_id=2, initializer_range=0.5)
+    if arch == "qwen3_5":
+        # 3 linear attention layers and 1 full attention layer, with twice as many value heads as key heads in the
+        # linear attention. The rotary embedding covers a quarter of each head, as in Qwen3.5.
+        from transformers import Qwen3_5TextConfig
+        return Qwen3_5TextConfig(
+            vocab_size=248320, hidden_size=32, intermediate_size=64, num_hidden_layers=4, num_attention_heads=4,
+            num_key_value_heads=2, head_dim=16, linear_num_key_heads=2, linear_num_value_heads=4, linear_key_head_dim=16,
+            linear_value_head_dim=8, linear_conv_kernel_dim=4, max_position_embeddings=8192, rms_norm_eps=1e-6,
+            tie_word_embeddings=True, eos_token_id=248044, pad_token_id=248044, initializer_range=0.5,
+            rope_parameters={"rope_type": "default", "rope_theta": 10000000, "partial_rotary_factor": 0.25,
+                             "mrope_section": [1, 1, 0], "mrope_interleaved": True})
     from transformers import Phi3Config
     return Phi3Config(
         vocab_size=32064, hidden_size=32, intermediate_size=64, num_hidden_layers=2, num_attention_heads=4,
@@ -123,14 +139,15 @@ def export_onnx(model, path):
             "position_ids": {0: "batch", 1: "seq"}, "logits": {0: "batch", 1: "seq"}}
     axes.update({name: {0: "batch", 2: "past"} for name in past_names})
     axes.update({name: {0: "batch", 2: "total"} for name in present_names})
-    folder = os.path.dirname(os.path.abspath(path))
-    before = set(os.listdir(folder))
     with torch.no_grad():
         torch.onnx.export(Step(model), args, path, input_names=["input_ids", "attention_mask", "position_ids"] + past_names,
                           output_names=["logits"] + present_names, dynamic_axes=axes, opset_version=17, dynamo=False)
-    # Above 2 GB, torch writes each weight to a file of its own. Pack them into one model.onnx_data, which AI Model
-    # Hub takes along with model.onnx.
-    weights = set(os.listdir(folder)) - before - {os.path.basename(path)}
+
+
+def pack_weights(path, weights):
+    """Above 2 GB, torch writes each weight to a file of its own. Packs these files into one model.onnx_data, which
+    AI Model Hub takes along with model.onnx."""
+    folder = os.path.dirname(os.path.abspath(path))
     if weights:
         import onnx
         onnx.save_model(onnx.load(path), path, save_as_external_data=True, all_tensors_to_one_file=True,
@@ -206,9 +223,17 @@ def export(args):
     float16 = getattr(args, "dtype", "float32") == "float16"
     model = load_model(args.model, torch.float16 if float16 else torch.float32)
     path = os.path.join(args.out, "model.onnx")
-    export_onnx(model, path)
+    folder = os.path.dirname(os.path.abspath(path))
+    before = set(os.listdir(folder))
+    if hybrid.is_hybrid(model.config):
+        hybrid.export_onnx(model, path)
+    else:
+        export_onnx(model, path)
+    pack_weights(path, set(os.listdir(folder)) - before - {os.path.basename(path)})
     copy_files(args.model, args.out, ["config.json", "generation_config.json"] + TOKENIZER_FILES + EXTRA_TOKENIZER_FILES)
-    if not float16:
+    if hybrid.is_hybrid(model.config):
+        hybrid.check_export(model, NEW_TOKENS)
+    elif not float16:
         check_export(model, path)
     print("exported", path)
 
@@ -221,7 +246,7 @@ def tiny(args):
     model = AutoModelForCausalLM.from_config(config).eval()
     torch_dir = os.path.join(args.out, "torch")
     model.save_pretrained(torch_dir)
-    GenerationConfig(bos_token_id=config.bos_token_id, eos_token_id=config.eos_token_id,
+    GenerationConfig(bos_token_id=getattr(config, "bos_token_id", None), eos_token_id=config.eos_token_id,
                      pad_token_id=config.pad_token_id).save_pretrained(torch_dir)
     repo, revision = TINY[args.arch]["tokenizer"]
     for name in TOKENIZER_FILES + EXTRA_TOKENIZER_FILES:
@@ -238,7 +263,7 @@ def margins(model):
     """Prints the smallest gap between the best and second-best logit while generating, to see that greedy is stable."""
     from transformers import AutoTokenizer
     tokenizer = AutoTokenizer.from_pretrained(model.name_or_path)
-    ids = tokenizer.apply_chat_template(MESSAGES, add_generation_prompt=True)
+    ids = tokenizer.encode(tokenizer.apply_chat_template(MESSAGES, add_generation_prompt=True, tokenize=False))
     with torch.no_grad():
         out = model.generate(torch.tensor([ids]), max_new_tokens=NEW_TOKENS, do_sample=False,
                              output_scores=True, return_dict_in_generate=True)
@@ -268,11 +293,15 @@ def references(args):
 
     from transformers import AutoConfig
     config = AutoConfig.from_pretrained(root)
-    lm = OnnxLM(os.path.join(root, "model.onnx"), config)
+    if hybrid.is_hybrid(config):
+        # onnxruntime cannot run the GatedDeltaRule node: the export module runs in torch instead.
+        lm = hybrid.TorchLM(load_model(os.path.join(root, "..", "torch")))
+    else:
+        lm = OnnxLM(os.path.join(root, "model.onnx"), config)
     prompt = tokenizer.encode(chat)
     logits, _ = lm.run(prompt)
     write(prefix + "_prompt_ids", prompt)
-    write(prefix + "_last_logits", logits[0, -1, :64].tolist())
+    write(prefix + "_last_logits", [float(x) for x in logits[0, -1, :64]])
     generated = lm.greedy(prompt, NEW_TOKENS)
     write(prefix + "_greedy", generated)
     if os.path.exists(os.path.join(root, "..", "torch")):
