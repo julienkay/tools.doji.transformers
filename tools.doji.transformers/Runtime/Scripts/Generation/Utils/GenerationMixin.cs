@@ -78,10 +78,6 @@ namespace Doji.AI.Transformers {
         private GpuSampler _sampler;
 
         // The main-thread work of GenerateAsync in a frame, and its parts.
-        // With SpreadStepsOverFrames, the parts that the GPU may not have done yet when a new part starts. With more,
-        // the GPU queue grows until a command buffer execute stops the main thread. With fewer, the GPU waits.
-        private const int MaxPartsOnGpu = 3;
-
         private static readonly ProfilerMarker FrameMarker = new("Doji.Generate.Frame");
         private static readonly ProfilerMarker StepMarker = new("Doji.Generate.Step");
         private static readonly ProfilerMarker SampleMarker = new("Doji.Generate.Sample");
@@ -134,7 +130,6 @@ namespace Doji.AI.Transformers {
                 Sample(logits);
                 var pacer = sync ? null : new StepPacer(Pacing);
                 var clock = new System.Diagnostics.Stopwatch();
-                var partFences = new Queue<UnityEngine.Rendering.GraphicsFence>();
                 bool FrameBudgetUsed() => clock.Elapsed.TotalMilliseconds >= pacer.MaxMillisecondsPerFrame;
                 while (true) {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -161,21 +156,10 @@ namespace Doji.AI.Transformers {
                                 }
                                 step = RunInParts(_sampler.Token, cache, FrameBudgetUsed);
                             }
-                            // A step spread over frames: schedule its layers until the frame budget is used. If the GPU
-                            // has not done the parts of the frames before, wait a frame, so the GPU queue stays short.
-                            while (partFences.Count > 0 && partFences.Peek().passed) {
-                                partFences.Dequeue();
-                            }
-                            if (partFences.Count >= MaxPartsOnGpu) {
-                                break;
-                            }
+                            // A step spread over frames: schedule its layers until the frame budget is used.
                             bool more;
                             using (StepMarker.Auto()) {
                                 more = step.MoveNext();
-                            }
-                            if (UnityEngine.SystemInfo.supportsGraphicsFence) {
-                                partFences.Enqueue(UnityEngine.Graphics.CreateGraphicsFence(UnityEngine.Rendering.GraphicsFenceType.CPUSynchronisation,
-                                    UnityEngine.Rendering.SynchronisationStageFlags.AllGPUOperations));
                             }
                             if (more) {
                                 break;
