@@ -68,8 +68,8 @@ In a release Player (vSync on), `GenerateAsync` picks the tokens on the GPU and 
 
 | Model | Greedy, tokens/s<br>D3D12 / D3D11 | Sampling, tokens/s<br>D3D12 / D3D11 |
 |---|---|---|
-| SmolLM2-135M-Instruct-sentis-float16 | 32.6 / 43.0 | 26.5 / 33.0 |
-| SmolLM2-1.7B-Instruct-sentis-float16 | 13.5 / 11.7 | 12.4 / 11.0 |
+| SmolLM2-135M-Instruct-sentis-float16 | 41.4 / 47.1 | 37.8 / 38.8 |
+| SmolLM2-1.7B-Instruct-sentis-float16 | 15.9 / 12.2 | 14.4 / 11.3 |
 
 Sampling uses temperature 0.7, top-k 50, top-p 0.9 and repetition penalty 1.1. The Play mode table above was measured before the sampling moved to the GPU, when each token took about 3 frames.
 
@@ -86,10 +86,10 @@ With `SpreadStepsOverFrames`, a step that takes longer than a frame goes on in t
 
 | Model | Default pacing<br>D3D12 / D3D11 | Spread, 4 ms<br>D3D12 / D3D11 | Spread, 8 ms<br>D3D12 / D3D11 |
 |---|---|---|---|
-| SmolLM2-135M-Instruct-sentis-float16 | 29 / 41 tokens/s, 35 / 25 ms/frame | 8.5 / 8.4 tokens/s, 16.9 / 16.7 ms/frame | 19.0 / 18.1 tokens/s, 16.9 / 16.7 ms/frame |
-| SmolLM2-1.7B-Instruct-sentis-float16 | 12.7 / 11.1 tokens/s, 78 / 90 ms/frame | 12.5 / 10.4 tokens/s, 18.1 / 19.1 ms/frame | 12.0 / 10.1 tokens/s, 27.6 / 31.6 ms/frame |
+| SmolLM2-135M-Instruct-sentis-float16 | 42 / 48 tokens/s, 24 / 21 ms/frame | 10.9 / 10.0 tokens/s, 17.0 / 16.7 ms/frame | 22.2 / 20.7 tokens/s, 17.1 / 16.8 ms/frame |
+| SmolLM2-1.7B-Instruct-sentis-float16 | 15.8 / 12.0 tokens/s, 63 / 83 ms/frame | 14.8 / 11.4 tokens/s, 18.9 / 19.0 ms/frame | 15.5 / 12.0 tokens/s, 31.7 / 35.0 ms/frame |
 
-The budget is main-thread time. SmolLM2-1.7B does much more GPU work per step than CPU work, so its parts of 8 ms carry more GPU work than a frame.
+The budget is main-thread time. SmolLM2-1.7B does much more GPU work per step than CPU work, so its parts of 8 ms carry more GPU work than a frame. Single frames take longer than the mean: with SmolLM2-1.7B, the longest frame of a run was 98 / 129 ms at 4 ms and 114 / 135 ms at 8 ms. With SmolLM2-135M, it was 101 / 20 ms at 4 ms and 65 / 33 ms at 8 ms.
 
 Long prompts with Phi-3-mini-4k-instruct-sentis-float16, 4 new tokens after the prompt:
 
@@ -102,7 +102,7 @@ Long prompts with Phi-3-mini-4k-instruct-sentis-float16, 4 new tokens after the 
 - Peak VRAM is the GPU memory that the model adds, from `nvidia-smi`. In the long-prompt table, VRAM is the memory of the whole GPU while the model holds its cache.
 - Peak RAM is the resident memory (working set) that the Editor process adds while it loads and runs the model.
 - D3D12 is the default graphics API of Unity 6 on Windows. On D3D12, GPU memory that a model frees during a long prompt can't be reused in the same frame, so long prompts need more VRAM. To use D3D11, turn off *Auto Graphics API for Windows* in the Player settings and put Direct3D11 first, or start the Editor with `-force-d3d11`.
-- Measured on 2026-11-24 with `BackendType.GPUCompute`, Unity 6000.6.4f1, an NVIDIA GeForce RTX 3060 (12 GB) and an Intel Core i7-4790K. The D3D11 numbers come from one run per model.
+- Measured on 2026-11-24 (the release Player tables of SmolLM2 on 2026-11-25) with `BackendType.GPUCompute`, Unity 6000.6.4f1, an NVIDIA GeForce RTX 3060 (12 GB) and an Intel Core i7-4790K. The D3D11 numbers come from one run per model.
 
 ## Roadmap:
 
