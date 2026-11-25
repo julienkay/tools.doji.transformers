@@ -54,7 +54,7 @@ The models are plain ONNX exports with the input and output names of optimum (`i
 
 #### GGUF files
 
-`AutoModelForCausalLM.FromGguf` loads a model from a GGUF file of llama.cpp, for example one of [ggml-org/Qwen3.5-0.8B-GGUF](https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF). Supported architecture: `qwen35` (Qwen3.5). F32 tensors stay float32, all other types become float16 on the GPU. The tokenizer still comes from the Hugging Face repository of the model.
+`AutoModelForCausalLM.FromGguf` loads a model from a GGUF file of llama.cpp, for example one of [ggml-org/Qwen3.5-0.8B-GGUF](https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF). Supported architecture: `qwen35` (Qwen3.5). Q8_0, Q4_K, Q5_K and Q6_K weights stay quantized on the GPU, which covers Q8_0 and Q4_K_M files. F32 tensors stay float32, other types become float16. The tokenizer still comes from the Hugging Face repository of the model.
 
 ```csharp
 var model = AutoModelForCausalLM.FromGguf("Models/Qwen3.5-0.8B-Q8_0.gguf");
@@ -107,13 +107,14 @@ Long prompts with Phi-3-mini-4k-instruct-sentis-float16, 4 new tokens after the 
 | 2048 tokens | 2.1 tokens/s, 11.6 GB VRAM (at the limit of the GPU) | 3.0 tokens/s, 9.7 GB VRAM |
 | 3072 tokens | not run: 2048 tokens already fill the GPU | 2.2 tokens/s, 10.3 GB VRAM (11.5 GB peak) |
 
-Loading Qwen3.5-0.8B with `BackendType.GPUCompute` in a headless Editor (PlayMode test), D3D12, warm file cache, 3 runs each. Each run gives the 32 greedy tokens of transformers. Load is the time to a model ready to generate.
+Loading Qwen3.5-0.8B with `BackendType.GPUCompute` in a headless Editor (PlayMode test), D3D12, warm file cache, 3 runs each. Load is the time to a model ready to generate. 32 greedy tokens after a short chat prompt, the second of two runs, compared with the tokens of transformers (float32):
 
-| Source | Load | RAM after load | VRAM after load |
-|---|---|---|---|
-| `model.sentis`, float16 (`ModelFile`) | 1.9–2.0 s | +1.5 GB | 1.9 GB |
-| [Qwen3.5-0.8B-BF16.gguf](https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF) (`FromGguf`, float16 on the GPU) | 3.1 s (4.3 s first run) | +1.5 GB | 1.9 GB |
-| [Qwen3.5-0.8B-Q8_0.gguf](https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF) (`FromGguf`, float16 on the GPU) | 2.7–2.9 s (4.9 s first run) | +1.3 GB | 1.9 GB |
+| Source | Load | RAM after load | VRAM after load | 32 tokens | Same tokens as transformers |
+|---|---|---|---|---|---|
+| `model.sentis`, float16 (`ModelFile`) | 1.9–2.0 s | +1.5 GB | 1.9 GB | 2.1 s | 32 of 32 |
+| [Qwen3.5-0.8B-BF16.gguf](https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF) (`FromGguf`, float16 on the GPU) | 3.1 s (4.3 s first run) | +1.5 GB | 1.9 GB | 1.7–1.9 s | 32 of 32 |
+| [Qwen3.5-0.8B-Q8_0.gguf](https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF) (`FromGguf`, Q8_0 on the GPU) | 1.6–1.7 s | +0.6 GB | 0.8 GB | 0.8 s | 32 of 32 |
+| [Qwen3.5-0.8B-Q4_K_M.gguf](https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF) (`FromGguf`, Q4_K, Q5_K, Q6_K and Q8_0 on the GPU) | 1.5–1.9 s | +0.5 GB | 0.5 GB | 0.7–0.8 s | first 25 of 32 |
 
 - Peak VRAM is the GPU memory that the model adds, from `nvidia-smi`. In the long-prompt table, VRAM is the memory of the whole GPU while the model holds its cache.
 - Peak RAM is the resident memory (working set) that the Editor process adds while it loads and runs the model.

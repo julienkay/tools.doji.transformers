@@ -346,8 +346,9 @@ def gguf_references(args):
 
     The GGUF files come from convert_hf_to_gguf.py of llama.cpp on the torch folder of the tiny model (with --no-mtp
     and --outtype f32, bf16 or q8_0). A file that is not F32 holds its matrices (the embedding and the linear
-    weights) as BF16 or Q8_0, which gguf-py rounds as the converter does. Unity converts them to float16. The other
-    tensors stay float32. The F32 file needs no data of its own: its logits are those of the tiny model.
+    weights) as BF16 or Q8_0, which gguf-py rounds as the converter does. Unity converts BF16 to float16 and keeps
+    Q8_0 in its blocks (BlockQuant of sentis-utils), which compute with the dequantized values. The other tensors stay
+    float32. The F32 file needs no data of its own: its logits are those of the tiny model.
     """
     import gguf
     from gguf import quants
@@ -363,13 +364,15 @@ def gguf_references(args):
         with torch.no_grad():
             for name, param in model.named_parameters():
                 if param.ndim == 2:
-                    rounded = quants.dequantize(quants.quantize(param.numpy(), qtype), qtype)
-                    param.copy_(torch.from_numpy(rounded).half().float())
+                    rounded = torch.from_numpy(quants.dequantize(quants.quantize(param.numpy(), qtype), qtype))
+                    param.copy_(rounded.half().float() if outtype == "bf16" else rounded)
             # Check the rounding against the file for tensors that the converter does not reorder.
             table = model.model.embed_tokens.weight.numpy()
             tensor = next(t for t in reader.tensors if t.name == "token_embd.weight")
             from_file = quants.dequantize(tensor.data, qtype).reshape(table.shape)
-            assert np.array_equal(torch.from_numpy(from_file).half().float().numpy(), table), "the embedding differs from the file"
+            from_file = torch.from_numpy(from_file)
+            from_file = from_file.half().float() if outtype == "bf16" else from_file
+            assert np.array_equal(from_file.numpy(), table), "the embedding differs from the file"
         lm = hybrid.TorchLM(model)
         logits, _ = lm.run(prompt)
         name = f"{prefix}_gguf_{outtype}"

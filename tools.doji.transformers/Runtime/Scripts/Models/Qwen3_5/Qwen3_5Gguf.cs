@@ -92,7 +92,7 @@ namespace Doji.AI.Transformers {
                 }
             }
 
-            var hiddenStates = w.Weight("token_embd.weight").IndexSelect(0, inputIds.Reshape(new[] { -1 })).Reshape(new[] { 1, -1, hidden });
+            var hiddenStates = w.Embedding("token_embd.weight", inputIds.Reshape(new[] { -1 })).Reshape(new[] { 1, -1, hidden });
 
             // Rotary embedding of the first ropeDim values of each head, rotate_half style. Qwen3.5 uses interleaved
             // MRoPE, which for text (the same position in all three sections) is the plain rotary embedding.
@@ -120,21 +120,21 @@ namespace Doji.AI.Transformers {
                 if (config.IsLinearAttention(i)) {
                     FunctionalTensor mixed, z;
                     if (w.Has(p + "attn_qkv_gate.weight")) {
-                        var qkvz = F.MatMul(x, w.Linear(p + "attn_qkv_gate.weight"));
+                        var qkvz = w.MatMul(x, p + "attn_qkv_gate.weight");
                         mixed = qkvz[.., .., ..convDim];
                         z = qkvz[.., .., convDim..];
                     } else {
-                        mixed = F.MatMul(x, w.Linear(p + "attn_qkv.weight"));
-                        z = F.MatMul(x, w.Linear(p + "attn_gate.weight"));
+                        mixed = w.MatMul(x, p + "attn_qkv.weight");
+                        z = w.MatMul(x, p + "attn_gate.weight");
                     }
                     FunctionalTensor b, a;
                     if (w.Has(p + "ssm_beta_alpha.weight")) {
-                        var ba = F.MatMul(x, w.Linear(p + "ssm_beta_alpha.weight"));
+                        var ba = w.MatMul(x, p + "ssm_beta_alpha.weight");
                         b = ba[.., .., ..vHeads];
                         a = ba[.., .., vHeads..];
                     } else {
-                        b = F.MatMul(x, w.Linear(p + "ssm_beta.weight"));
-                        a = F.MatMul(x, w.Linear(p + "ssm_alpha.weight"));
+                        b = w.MatMul(x, p + "ssm_beta.weight");
+                        a = w.MatMul(x, p + "ssm_alpha.weight");
                     }
 
                     // Causal depthwise convolution over the cached and the new tokens.
@@ -153,15 +153,15 @@ namespace Doji.AI.Transformers {
                     var (o, state) = LinearAttention.GatedDeltaRule(q, k, v, g, beta, past[2 * i + 1], 1f / MathF.Sqrt(kDim));
                     outputs.Add((state, $"present_recurrent.{i}"));
                     var gated = F.RMSNorm(o, w.Weight(p + "ssm_norm.weight"), eps) * Silu(z.Reshape(new[] { 1, -1, vHeads, vDim }));
-                    x = F.MatMul(gated.Reshape(new[] { 1, -1, valueDim }), w.Linear(p + "ssm_out.weight"));
+                    x = w.MatMul(gated.Reshape(new[] { 1, -1, valueDim }), p + "ssm_out.weight");
                 } else {
                     // The query projection gives the query and an output gate for each head.
-                    var qg = F.MatMul(x, w.Linear(p + "attn_q.weight")).Reshape(new[] { 1, -1, heads, 2 * headDim });
+                    var qg = w.MatMul(x, p + "attn_q.weight").Reshape(new[] { 1, -1, heads, 2 * headDim });
                     var gate = qg[.., .., .., headDim..].Reshape(new[] { 1, -1, heads * headDim });
                     var q = Rope(F.RMSNorm(qg[.., .., .., ..headDim], w.Weight(p + "attn_q_norm.weight"), eps).Transpose(1, 2));
-                    var k = F.MatMul(x, w.Linear(p + "attn_k.weight")).Reshape(new[] { 1, -1, kvHeads, headDim });
+                    var k = w.MatMul(x, p + "attn_k.weight").Reshape(new[] { 1, -1, kvHeads, headDim });
                     k = Rope(F.RMSNorm(k, w.Weight(p + "attn_k_norm.weight"), eps).Transpose(1, 2));
-                    var v = F.MatMul(x, w.Linear(p + "attn_v.weight")).Reshape(new[] { 1, -1, kvHeads, headDim }).Transpose(1, 2);
+                    var v = w.MatMul(x, p + "attn_v.weight").Reshape(new[] { 1, -1, kvHeads, headDim }).Transpose(1, 2);
                     var keys = F.Concat(new[] { past[2 * i], k }, 2);
                     var values = F.Concat(new[] { past[2 * i + 1], v }, 2);
                     outputs.Add((keys, $"present.{i}.key"));
@@ -171,19 +171,17 @@ namespace Doji.AI.Transformers {
                     var scores = F.MatMul(grouped, keys.Unsqueeze(2).Transpose(3, 4)) * (1f / MathF.Sqrt(headDim)) + mask;
                     var attention = F.MatMul(F.Softmax(scores, -1), values.Unsqueeze(2)).Reshape(new[] { 1, heads, -1, headDim });
                     attention = attention.Transpose(1, 2).Reshape(new[] { 1, -1, heads * headDim }) * F.Sigmoid(gate);
-                    x = F.MatMul(attention, w.Linear(p + "attn_output.weight"));
+                    x = w.MatMul(attention, p + "attn_output.weight");
                 }
                 hiddenStates = residual + x;
                 residual = hiddenStates;
                 x = F.RMSNorm(hiddenStates, w.Weight(p + "post_attention_norm.weight"), eps);
-                x = F.MatMul(Silu(F.MatMul(x, w.Linear(p + "ffn_gate.weight"))) * F.MatMul(x, w.Linear(p + "ffn_up.weight")),
-                    w.Linear(p + "ffn_down.weight"));
+                x = w.MatMul(Silu(w.MatMul(x, p + "ffn_gate.weight")) * w.MatMul(x, p + "ffn_up.weight"), p + "ffn_down.weight");
                 hiddenStates = residual + x;
             }
             hiddenStates = F.RMSNorm(hiddenStates, w.Weight("output_norm.weight"), eps);
             // Tied embeddings: a file without output.weight uses the embedding table as the head.
-            var head = w.Linear(w.Has("output.weight") ? "output.weight" : "token_embd.weight");
-            graph.AddOutput(F.MatMul(hiddenStates, head), "logits");
+            graph.AddOutput(w.MatMul(hiddenStates, w.Has("output.weight") ? "output.weight" : "token_embd.weight"), "logits");
             foreach (var (tensor, name) in outputs) {
                 graph.AddOutput(tensor, name);
             }
