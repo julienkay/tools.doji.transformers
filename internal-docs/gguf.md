@@ -33,7 +33,7 @@ Three packages share the work:
 
 ## Tests
 
-`GgufCausalLMTest` loads three GGUF files of the tiny Qwen3.5 model (`--outtype f32`, `bf16` and `q8_0` of `convert_hf_to_gguf.py`, `--no-mtp`). The tiny model has 2 key heads and 4 value heads, so the tests cover the tiled order. The F32 file has the weights of the tiny model, so its reference data is that of the ONNX export. For BF16 and Q8_0, `tools/causal_lm/make_models.py gguf-references` rounds the matrices as the file holds them, then to float16 as Unity converts them, and runs transformers. AI Model Hub does not serve the files yet: the tests read them from the folder in the environment variable `DOJI_TINY_QWEN3_5_GGUF` and are ignored without it.
+`GgufCausalLMTest` loads three GGUF files of the tiny Qwen3.5 model (`--outtype f32`, `bf16` and `q8_0` of `convert_hf_to_gguf.py`, `--no-mtp`). The tiny model has 2 key heads and 4 value heads, so the tests cover the tiled order. The F32 file has the weights of the tiny model, so its reference data is that of the ONNX export. For BF16 and Q8_0, `tools/causal_lm/make_models.py gguf-references` rounds the matrices as the file holds them, then to float16 as Unity converts them, and runs transformers. The files are in [julienkay/tiny-random-Qwen3_5ForCausalLM-GGUF](https://huggingface.co/julienkay/tiny-random-Qwen3_5ForCausalLM-GGUF). AI Model Hub does not serve GGUF files yet: the tests read them from the folder in the environment variable `DOJI_TINY_QWEN3_5_GGUF` and are ignored without it.
 
 ## Limits
 

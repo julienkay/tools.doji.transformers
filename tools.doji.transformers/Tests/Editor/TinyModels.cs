@@ -27,7 +27,8 @@ namespace Doji.AI.Transformers.Editor.Tests {
 
         /// <summary>
         /// The environment variable with the folder of the tiny Qwen3.5 model as GGUF files of llama.cpp:
-        /// model-f32.gguf, model-bf16.gguf and model-q8_0.gguf. AI Model Hub does not serve GGUF files yet.
+        /// model-f32.gguf, model-bf16.gguf and model-q8_0.gguf of julienkay/tiny-random-Qwen3_5ForCausalLM-GGUF.
+        /// AI Model Hub does not serve GGUF files yet.
         /// </summary>
         public const string Qwen3_5GgufVariable = "DOJI_TINY_QWEN3_5_GGUF";
     }
