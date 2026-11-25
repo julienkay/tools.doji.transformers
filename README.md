@@ -68,8 +68,8 @@ In a release Player (vSync on), `GenerateAsync` picks the tokens on the GPU and 
 
 | Model | Greedy, tokens/s<br>D3D12 / D3D11 | Sampling, tokens/s<br>D3D12 / D3D11 |
 |---|---|---|
-| SmolLM2-135M-Instruct-sentis-float16 | 41.4 / 47.1 | 37.8 / 38.8 |
-| SmolLM2-1.7B-Instruct-sentis-float16 | 15.9 / 12.2 | 14.4 / 11.3 |
+| SmolLM2-135M-Instruct-sentis-float16 | 46.6 / 49.7 | 37.7 / 37.9 |
+| SmolLM2-1.7B-Instruct-sentis-float16 | 16.0 / 12.1 | 14.5 / 11.3 |
 
 Sampling uses temperature 0.7, top-k 50, top-p 0.9 and repetition penalty 1.1. The Play mode table above was measured before the sampling moved to the GPU, when each token took about 3 frames.
 
@@ -86,10 +86,10 @@ With `SpreadStepsOverFrames`, a step that takes longer than a frame goes on in t
 
 | Model | Default pacing<br>D3D12 / D3D11 | Spread, 4 ms<br>D3D12 / D3D11 | Spread, 8 ms<br>D3D12 / D3D11 |
 |---|---|---|---|
-| SmolLM2-135M-Instruct-sentis-float16 | 42 / 48 tokens/s, 24 / 21 ms/frame | 10.9 / 10.0 tokens/s, 17.0 / 16.7 ms/frame | 22.2 / 20.7 tokens/s, 17.1 / 16.8 ms/frame |
-| SmolLM2-1.7B-Instruct-sentis-float16 | 15.8 / 12.0 tokens/s, 63 / 83 ms/frame | 14.8 / 11.4 tokens/s, 18.9 / 19.0 ms/frame | 15.5 / 12.0 tokens/s, 31.7 / 35.0 ms/frame |
+| SmolLM2-135M-Instruct-sentis-float16 | 48 / 49 tokens/s, 21 / 20 ms/frame | 11.1 / 10.8 tokens/s, 17.0 / 16.8 ms/frame | 23.9 / 22.7 tokens/s, 17.1 / 16.9 ms/frame |
+| SmolLM2-1.7B-Instruct-sentis-float16 | 15.9 / 12.0 tokens/s, 63 / 83 ms/frame | 14.6 / 11.8 tokens/s, 20.1 / 21.7 ms/frame | 15.5 / 12.1 tokens/s, 32.4 / 39.4 ms/frame |
 
-The budget is main-thread time. SmolLM2-1.7B does much more GPU work per step than CPU work, so its parts of 8 ms carry more GPU work than a frame. Single frames take longer than the mean: with SmolLM2-1.7B, the longest frame of a run was 98 / 129 ms at 4 ms and 114 / 135 ms at 8 ms. With SmolLM2-135M, it was 101 / 20 ms at 4 ms and 65 / 33 ms at 8 ms.
+The budget is main-thread time. SmolLM2-1.7B does much more GPU work per step than CPU work, so its parts of 8 ms carry more GPU work than a frame. Single frames take longer than the mean: with SmolLM2-1.7B, the longest frame of a run was 83 / 129 ms at 4 ms and 136 / 162 ms at 8 ms. With SmolLM2-135M, it was 106 / 42 ms at 4 ms and 68 / 34 ms at 8 ms.
 
 Long prompts with Phi-3-mini-4k-instruct-sentis-float16, 4 new tokens after the prompt:
 
