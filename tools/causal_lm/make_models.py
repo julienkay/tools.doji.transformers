@@ -148,12 +148,39 @@ def pack_weights(path, weights):
     """Above 2 GB, torch writes each weight to a file of its own. Packs these files into one model.onnx_data, which
     AI Model Hub takes along with model.onnx."""
     folder = os.path.dirname(os.path.abspath(path))
-    if weights:
-        import onnx
-        onnx.save_model(onnx.load(path), path, save_as_external_data=True, all_tensors_to_one_file=True,
-                        location=os.path.basename(path) + "_data", size_threshold=1024)
-        for name in weights:
-            os.remove(os.path.join(folder, name))
+    if not weights:
+        return
+    import onnx
+    # Copies the files one by one and rewrites only the locations, so the weights are never all in memory.
+    model = onnx.load(path, load_external_data=False)
+    location = os.path.basename(path) + "_data"
+    with open(os.path.join(folder, location), "wb") as data:
+        for tensor in model.graph.initializer:
+            if tensor.data_location != onnx.TensorProto.EXTERNAL:
+                continue
+            info = {entry.key: entry.value for entry in tensor.external_data}
+            offset = data.tell()
+            # Aligns each tensor to 4 KB, as onnx does for external data.
+            if offset % 4096:
+                data.write(b"\0" * (4096 - offset % 4096))
+                offset = data.tell()
+            with open(os.path.join(folder, info["location"]), "rb") as src:
+                src.seek(int(info.get("offset", 0)))
+                length = int(info["length"]) if "length" in info else None
+                copied = 0
+                while length is None or copied < length:
+                    chunk = src.read(1 << 24 if length is None else min(1 << 24, length - copied))
+                    if not chunk:
+                        break
+                    data.write(chunk)
+                    copied += len(chunk)
+            del tensor.external_data[:]
+            for key, value in (("location", location), ("offset", str(offset)), ("length", str(copied))):
+                entry = tensor.external_data.add()
+                entry.key, entry.value = key, value
+    onnx.save_model(model, path)
+    for name in weights:
+        os.remove(os.path.join(folder, name))
 
 
 class OnnxLM:
