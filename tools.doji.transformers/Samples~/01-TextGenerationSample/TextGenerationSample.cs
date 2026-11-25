@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using UnityEngine;
@@ -18,6 +19,9 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
         /// <summary>
         /// The models to choose from. Each must be listed in an AI Model Hub manifest. SmolLM2-1.7B and Phi-3-mini
         /// are optional there: turn them on in AI Model Hub to download them.
+        /// An entry that ends with <c>.gguf</c> is a GGUF file of llama.cpp instead, for example
+        /// <c>Qwen3.5-0.8B-Q8_0.gguf</c> of ggml-org/Qwen3.5-0.8B-GGUF: an absolute path, or a path in
+        /// <c>Assets/StreamingAssets</c>. The model and the tokenizer load from the file.
         /// </summary>
         public string[] ModelIds = {
             "julienkay/SmolLM2-360M-Instruct-sentis-float16",
@@ -116,7 +120,15 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
             _modelField.index = 0;
         }
 
+        private static bool IsGguf(string modelId) => modelId.EndsWith(".gguf", StringComparison.OrdinalIgnoreCase);
+
+        private static string GgufPath(string modelId) =>
+            Path.IsPathRooted(modelId) ? modelId : Path.Combine(Application.streamingAssetsPath, modelId);
+
         private static string DisplayName(string modelId) {
+            if (IsGguf(modelId)) {
+                return Path.GetFileNameWithoutExtension(modelId);
+            }
             string name = modelId.Split('/').Last();
             foreach (string suffix in new[] { "-onnx", "-sentis-float16", "-sentis-uint8" }) {
                 if (name.EndsWith(suffix)) {
@@ -157,8 +169,17 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
             SetStatus($"Loading {DisplayName(modelId)}...");
             var cancel = _cancel;
             try {
-                var tokenizer = await AutoTokenizer.FromPretrainedAsync(modelId, cancellationToken: cancel.Token);
-                var model = await AutoModelForCausalLM.FromPretrainedAsync(modelId, cancellationToken: cancel.Token);
+                PreTrainedTokenizerBase tokenizer;
+                PreTrainedModel model;
+                if (IsGguf(modelId)) {
+                    // FromGguf reads the file on the main thread. Wait a frame so the status shows first.
+                    await Awaitable.NextFrameAsync(cancel.Token);
+                    tokenizer = AutoTokenizer.FromGguf(GgufPath(modelId));
+                    model = AutoModelForCausalLM.FromGguf(GgufPath(modelId));
+                } else {
+                    tokenizer = await AutoTokenizer.FromPretrainedAsync(modelId, cancellationToken: cancel.Token);
+                    model = await AutoModelForCausalLM.FromPretrainedAsync(modelId, cancellationToken: cancel.Token);
+                }
                 if (cancel.IsCancellationRequested) {
                     model.Dispose();
                     return;
@@ -170,7 +191,9 @@ namespace Doji.AI.Transformers.Samples.TextGeneration {
                 return;
             } catch (Exception e) {
                 Debug.LogException(e);
-                SetStatus($"Could not load {DisplayName(modelId)}. Check that AI Model Hub downloaded it, and see the Console.");
+                SetStatus(IsGguf(modelId)
+                    ? $"Could not load {GgufPath(modelId)}. See the Console."
+                    : $"Could not load {DisplayName(modelId)}. Check that AI Model Hub downloaded it, and see the Console.");
             }
             _loading = false;
             UpdateControls();
