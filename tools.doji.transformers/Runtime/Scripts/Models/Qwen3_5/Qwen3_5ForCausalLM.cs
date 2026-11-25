@@ -39,7 +39,8 @@ namespace Doji.AI.Transformers {
 
         /// <summary>
         /// Loads a model from a GGUF file of llama.cpp (architecture <c>qwen35</c>). The tensors stay in the file
-        /// until the worker needs them. F32 tensors stay float32, all other types become float16.
+        /// until the worker needs them. Q8_0, Q4_K, Q5_K and Q6_K weights stay quantized on the device, F32 tensors
+        /// stay float32, and other types become float16.
         /// </summary>
         public static Qwen3_5ForCausalLM FromGguf(string path, BackendType backend = BackendType.GPUCompute) {
             return (Qwen3_5ForCausalLM)GgufModels.Load(path, backend, Qwen3_5Gguf.Architecture);

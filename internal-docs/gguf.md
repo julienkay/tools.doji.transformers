@@ -10,7 +10,7 @@ Three packages share the work:
 |---|---|
 | tools.doji.formats.gguf | Reads the header and the tensors (`GgufFile`). Converts tensor types to float32 or float16 with Burst jobs (`GgufConvert`). No Inference Engine dependency. |
 | tools.doji.sentis-utils | `ExternalWeights` and `IWeightSource`: a graph whose weights come from any source, compiled to a `ModelFile`. `BlockQuant`: MatMul and Gather layers that read Q8_0, Q4_K, Q5_K and Q6_K blocks on the device (see `internal-docs/external-weights.md` and `block-quant.md` there). |
-| tools.doji.transformers | The config and the graph of each architecture (`Qwen3_5Gguf`), the weight source over a `GgufFile` (`GgufWeights`), and `FromGguf`. |
+| tools.doji.transformers | The config and the graph of each architecture (`Qwen3_5Gguf`), the weight source over a `GgufFile` (`GgufWeights`), the tokenizer (`GgufTokenizer`), and `FromGguf`. |
 
 ## How a load works
 
@@ -29,15 +29,27 @@ Three packages share the work:
   - With fewer key heads than value heads, the converter puts the value heads in tiled order: value head j uses key head j % key heads. transformers groups them by key head (`repeat_interleave`). The graph repeats the query and key heads tiled (concatenated) instead. The recurrent state is then in tiled order too. The cache never looks inside it, so nothing else changes.
   - Newer converters merge `attn_qkv` and `attn_gate` into `attn_qkv_gate`, and `ssm_beta` and `ssm_alpha` into `ssm_beta_alpha` (rows of the first, then of the second). The graph runs one MatMul on the merged weight and slices the result. It reads the older separate tensors too.
   - The rotary embedding is interleaved MRoPE. For text, the three position sections are equal, so it is the plain rotary embedding of the first `rope.dimension_count` values of each head.
-- The tokenizer still comes from the Hugging Face files. `tokenizer.ggml.*` holds everything to build a `tokenizer.json`, except the pre-tokenizer, which llama.cpp knows by the name `tokenizer.ggml.pre`.
+- transformers builds the tokenizer of a GGUF file with `convert_gguf_tokenizer` and a converter class per architecture. `AutoTokenizer.FromGguf` builds a `tokenizer.json` from `tokenizer.ggml.*` and loads it with `TokenizersBackend` (see below).
+
+## Tokenizer
+
+`GgufTokenizer` builds a `tokenizer.json` and a `TokenizerConfig` from the metadata:
+
+- `tokenizer.ggml.tokens` and `tokenizer.ggml.merges` give the BPE vocabulary and merges. Only `tokenizer.ggml.model` gpt2 (byte-level BPE) is supported.
+- `tokenizer.ggml.token_type` gives the added tokens: control tokens (3) are special added tokens, user-defined tokens (4) are normalized added tokens. Unused tokens (5) are left out of the vocabulary.
+- The metadata has no pre-tokenizer. llama.cpp knows it by its name in `tokenizer.ggml.pre` and has the regex in its code. `GgufTokenizer.PreTokenizers` maps each supported name (`qwen35`, `qwen2`, `smollm`) to the normalizer, pre-tokenizer, post-processor and decoder of the `tokenizer.json` of the models that use it. A file with another name throws `NotSupportedException`.
+- The special tokens come from `tokenizer.ggml.*_token_id`, `add_bos_token` and `add_eos_token` from the keys of the same names (only when true), and the chat template from `tokenizer.chat_template`. `convert_hf_to_gguf.py` sets the end-of-sequence token of Qwen3.5 to `<|im_end|>`, so generation stops at the end of a chat turn.
+
+The tiny Qwen3.5 repository has the model type `qwen3_5_text`, for which transformers picks `Qwen2Tokenizer` and the Qwen2 regex. Qwen/Qwen3.5-0.8B has the model type `qwen3_5`, for which transformers loads `tokenizer.json` as it is, with the Qwen3.5 regex (letters and marks in one piece). The GGUF files say `qwen35`, so `GgufTokenizerTest` compares with the `tokenizer.json` loaded as it is.
 
 ## Tests
 
-`GgufCausalLMTest` loads three GGUF files of the tiny Qwen3.5 model (`--outtype f32`, `bf16` and `q8_0` of `convert_hf_to_gguf.py`, `--no-mtp`). The tiny model has 2 key heads and 4 value heads, so the tests cover the tiled order. The F32 file has the weights of the tiny model, so its reference data is that of the ONNX export. For BF16 and Q8_0, `tools/causal_lm/make_models.py gguf-references` rounds the matrices as the file holds them (and BF16 further to float16, as Unity converts it), and runs transformers. The Q8_0 file covers the packed path on the GPU and the CPU. The tiny model's rows of 32 values are too short for the K-quants; the layer tests of sentis-utils cover those. The files are in [julienkay/tiny-random-Qwen3_5ForCausalLM-GGUF](https://huggingface.co/julienkay/tiny-random-Qwen3_5ForCausalLM-GGUF). AI Model Hub does not serve GGUF files yet: the tests read them from the folder in the environment variable `DOJI_TINY_QWEN3_5_GGUF` and are ignored without it.
+`GgufCausalLMTest` loads three GGUF files of the tiny Qwen3.5 model (`--outtype f32`, `bf16` and `q8_0` of `convert_hf_to_gguf.py`, `--no-mtp`). The tiny model has 2 key heads and 4 value heads, so the tests cover the tiled order. The F32 file has the weights of the tiny model, so its reference data is that of the ONNX export. For BF16 and Q8_0, `tools/causal_lm/make_models.py gguf-references` rounds the matrices as the file holds them (and BF16 further to float16, as Unity converts it), and runs transformers. The Q8_0 file covers the packed path on the GPU and the CPU. The tiny model's rows of 32 values are too short for the K-quants; the layer tests of sentis-utils cover those. The files are in [julienkay/tiny-random-Qwen3_5ForCausalLM-GGUF](https://huggingface.co/julienkay/tiny-random-Qwen3_5ForCausalLM-GGUF). `GgufTokenizerTest` compares the tokenizer of the Q8_0 file with the `tokenizer.json` of the tiny model on fixed and random texts, and checks the special tokens and the chat template. AI Model Hub does not serve GGUF files yet: the tests read them from the folder in the environment variable `DOJI_TINY_QWEN3_5_GGUF` and are ignored without it.
 
 ## Limits
 
 - Only the architecture `qwen35`.
+- Only byte-level BPE tokenizers with the pre-tokenizers `qwen35`, `qwen2` and `smollm`.
 - Q4_0, Q4_1, Q5_0, Q5_1, Q2_K and Q3_K tensors load as float16. Other types (the IQ types, for example) are not converted.
 - The prefill kernels of BlockQuant are naive: they do not tile the input rows.
 - A tied head of a float16 table (no `output.weight`, embedding not in a packed type) is a second, transposed float16 copy of the table.

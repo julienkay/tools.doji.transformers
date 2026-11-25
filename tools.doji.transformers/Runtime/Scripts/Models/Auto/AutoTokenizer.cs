@@ -51,6 +51,17 @@ namespace Doji.AI.Transformers {
             return SyncTask.Run(FromPretrainedAsync(ModelRepository.Open(modelId)));
         }
 
+        /// <summary>
+        /// Loads the tokenizer of a GGUF file of llama.cpp from its metadata, as transformers'
+        /// <c>from_pretrained(..., gguf_file=...)</c> does: the vocabulary, the merges, the special tokens and the
+        /// chat template. Supported: byte-level BPE tokenizers (<c>tokenizer.ggml.model</c> gpt2) with the
+        /// pre-tokenizers <c>qwen35</c>, <c>qwen2</c> and <c>smollm</c>.
+        /// </summary>
+        public static PreTrainedTokenizerBase FromGguf(string path) {
+            var file = Doji.Gguf.GgufFile.Open(path);
+            return new TokenizersBackend(GgufTokenizer.TokenizerJson(file), GgufTokenizer.Config(file));
+        }
+
         /// <param name="subfolder">The folder of the tokenizer files in the repository, such as <c>"tokenizer/"</c>.</param>
         internal static Task<PreTrainedTokenizerBase> FromPretrainedAsync(ModelRepository files, string subfolder = "") {
             return FromPretrainedAsync(files, subfolder, null);
