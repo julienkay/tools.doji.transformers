@@ -10,6 +10,10 @@
       "revision": "280ba0d6f98d05922e9671d5f736634e74fd548d"
     },
     {
+      "id": "julienkay/tiny-random-Qwen3_5ForCausalLM-onnx",
+      "revision": "7099111e249a6dcdf5abe2d0d0253a9bab357415"
+    },
+    {
       "id": "julienkay/SmolLM2-135M-Instruct-onnx",
       "revision": "4d0daaa025676ba7a9b682e2720110cbf7fb021f"
     }

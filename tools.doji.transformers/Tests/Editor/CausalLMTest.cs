@@ -13,6 +13,8 @@ namespace Doji.AI.Transformers.Editor.Tests {
     [TestFixture(TinyModels.Llama, "tiny_llama", BackendType.CPU)]
     [TestFixture(TinyModels.Phi3, "tiny_phi3", BackendType.GPUCompute)]
     [TestFixture(TinyModels.Phi3, "tiny_phi3", BackendType.CPU)]
+    [TestFixture(TinyModels.Qwen3_5, "tiny_qwen3_5", BackendType.GPUCompute)]
+    [TestFixture(TinyModels.Qwen3_5, "tiny_qwen3_5", BackendType.CPU)]
     public class CausalLMTest {
 
         private readonly string _modelId, _references;
@@ -44,7 +46,8 @@ namespace Doji.AI.Transformers.Editor.Tests {
 
         /// <summary>
         /// AutoModelForCausalLM picks the class of <c>architectures</c>, and AutoTokenizer the class transformers v5
-        /// picks: the tokenizer_config of SmolLM2 names GPT2Tokenizer, and Phi-3 loads its tokenizer.json directly.
+        /// picks: the tokenizer_config of SmolLM2 names GPT2Tokenizer, Phi-3 loads its tokenizer.json directly, and the
+        /// tokenizer_config of the tiny Qwen3.5 names Qwen2Tokenizer.
         /// </summary>
         [Test]
         public void AutoClasses_PickTheClassesOfTransformers() {
@@ -52,6 +55,10 @@ namespace Doji.AI.Transformers.Editor.Tests {
                 Assert.That(_model, Is.TypeOf<LlamaForCausalLM>());
                 Assert.That(_tokenizer, Is.TypeOf<GPT2Tokenizer>());
                 Assert.That(_model.GenerationConfig.EosTokenId, Is.EqualTo(new[] { 2 }));
+            } else if (_modelId == TinyModels.Qwen3_5) {
+                Assert.That(_model, Is.TypeOf<Qwen3_5ForCausalLM>());
+                Assert.That(_tokenizer, Is.TypeOf<Qwen2Tokenizer>());
+                Assert.That(_model.GenerationConfig.EosTokenId, Is.EqualTo(new[] { 248044 }));
             } else {
                 Assert.That(_model, Is.TypeOf<Phi3ForCausalLM>());
                 Assert.That(_tokenizer, Is.TypeOf<TokenizersBackend>());

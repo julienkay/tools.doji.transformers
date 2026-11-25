@@ -18,5 +18,11 @@ namespace Doji.AI.Transformers.Editor.Tests {
         /// exported to plain ONNX.
         /// </summary>
         public const string Phi3 = "julienkay/tiny-random-Phi3ForCausalLM-onnx";
+
+        /// <summary>
+        /// A 4-layer random-weight Qwen3_5ForCausalLM (three linear attention layers, then one full attention
+        /// layer) with the tokenizer of Qwen/Qwen3.5-0.8B, exported to ONNX with the GatedDeltaRule node of ai.doji.
+        /// </summary>
+        public const string Qwen3_5 = "julienkay/tiny-random-Qwen3_5ForCausalLM-onnx";
     }
 }
